@@ -5,11 +5,14 @@ import ViewTypeConfig
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.util.Log
 import android.view.MotionEvent
+import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import com.demo.jsontoview.PropsLayout.LayoutGravityHandler
@@ -29,6 +32,8 @@ class FTree(
     @SerializedName("viewType") val viewType: ViewTypeConfig,
     @SerializedName("props") val props: Props,
     @SerializedName("children") val children: List<FTree> = emptyList(),
+    val context1: Context? = null,
+    val customViewGroup1: CustomViewGroup2? = null,
 ) : ViewComponent {
     var leftPosition: Int = 0
     var topPosition: Int = 0
@@ -39,7 +44,7 @@ class FTree(
     var measuredHeightDrawable: Int = 0
 
     private var context: Context? = null
-    private var customViewGroup: CustomViewGroup2? = null
+    var customViewGroup: CustomViewGroup2? = null
     private var drawableComponent: DrawableComponent? = null
     private var layoutStrategy: LayoutStrategy? = null
 
@@ -58,9 +63,13 @@ class FTree(
     private var backgroundColor: String? = null
     private var colorAnimator: ValueAnimator? = null
 
+    var imageBitmaps: MutableList<Bitmap?> = mutableListOf()
+
+
     fun setParent(parent: FTree) {
         mParent = parent
     }
+
 
     override fun measure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val layoutWidth = Parser.parseDimension(props.width)
@@ -156,8 +165,6 @@ class FTree(
             }
         }
 
-
-
         totalWidth = measuredWidthDrawable + props.margin.left + props.margin.right
         totalHeight = measuredHeightDrawable + props.margin.top + props.margin.bottom
 
@@ -171,15 +178,18 @@ class FTree(
 
     }
 
-    override fun layout(left: Int, top: Int) {
+    override fun layout(left: Int, top: Int): Pair<Int, Int> {
         leftPosition = left
         topPosition = top
         drawableComponent?.layout(left, top, this)
-        layoutStrategy?.layout(this, children)
+        val (l, t) = layoutStrategy?.layout(this, children) ?: Pair(0, 0)
 
         val (leftCal, topCal) = LayoutGravityHandler().calculateGravityPositions(this, left, top)
         leftPosition = leftCal
         topPosition = topCal
+        return Pair(
+            l, t
+        )
     }
 
     override fun draw(canvas: Canvas) {
@@ -193,7 +203,7 @@ class FTree(
         topView = -canvas.getClipBounds().top
 
         // Vẽ nền của FView
-        if (props.background != null||backgroundColor!=null) {
+        if (props.background != null || backgroundColor != null) {
             val paint = Paint().apply {
                 color = Color.parseColor(backgroundColor ?: props.background?.color)
             }
@@ -252,14 +262,20 @@ class FTree(
         if (props.clickAction != null) {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 if (checkClick(x, y)) {
-                    animateBackgroundColor(Color.parseColor(props.background?.color?:"#FFFFFF"), Color.LTGRAY)
+                    animateBackgroundColor(
+                        Color.parseColor(props.background?.color ?: "#FFFFFF"),
+                        Color.LTGRAY
+                    )
 
                 }
                 customViewGroup?.invalidate()
             }
             if (event.action == MotionEvent.ACTION_UP) {
                 if (checkClick(x, y)) {
-                    animateBackgroundColor(Color.LTGRAY, Color.parseColor(props.background?.color?:"#FFFFFF"))
+                    animateBackgroundColor(
+                        Color.LTGRAY,
+                        Color.parseColor(props.background?.color ?: "#FFFFFF")
+                    )
 
                 }
             }
@@ -336,6 +352,7 @@ class FTree(
         } else if (props.drawable?.type == TypeConfig.ArrayImage) {
             (drawableComponent as ImageArrayDrawable).loadImagesFromUrls(
                 context,
+                this,
                 props.drawable.dataList
             ) {
                 customViewGroup.requestLayout()

@@ -50,7 +50,10 @@ enum class UnitConfig(val unit: Int) {
     Dp(1),
 
     @SerializedName("2")
-    Px(2)
+    Px(2),
+
+    @SerializedName("3")
+    Percent(3)
 }
 
 enum class GravityConfig(val value: Int) {

@@ -6,7 +6,7 @@ import com.demo.jsontoview.CustomViewGroup2
 
 interface ViewComponent {
     fun measure(widthMeasureSpec: Int, heightMeasureSpec: Int)
-    fun layout(left: Int, top: Int)
+    fun layout(left: Int, top: Int): Pair<Int, Int>
     fun draw(canvas: Canvas)
     fun onTouchEvent(event: MotionEvent): Boolean
     fun setCustomViewGroup(customViewGroup: CustomViewGroup2, context: Context)

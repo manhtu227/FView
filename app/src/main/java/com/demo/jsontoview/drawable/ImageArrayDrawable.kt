@@ -20,56 +20,93 @@ import com.demo.jsontoview.pattern.ThreeImageStrategy
 import com.demo.jsontoview.pattern.TwoImageStrategy
 
 class ImageArrayDrawable : DrawableComponent {
-    private val imageBitmaps: MutableList<Bitmap?> = mutableListOf()
+    private var imageBitmaps: MutableList<Bitmap?> = mutableListOf()
     private var imageLayout: ImageStrategy? = null
 
     // Load danh sách các ảnh từ URL
-    fun loadImagesFromUrls(context: Context, urls: List<String>, onImagesReady: () -> Unit) {
-        imageBitmaps.clear()
-        for (url in urls) {
-            Glide.with(context)
-                .asBitmap()
-                .load(url)
-                .into(object : CustomTarget<Bitmap>() {
-                    override fun onResourceReady(
-                        resource: Bitmap,
-                        transition: Transition<in Bitmap>?,
-                    ) {
-                        imageBitmaps.add(resource)
-                        if (imageBitmaps.size == urls.size) {
-                            when (imageBitmaps.size) {
-                                1 -> {
-                                    imageLayout = imageBitmaps[0]?.let { SimpleImageStrategy(it) }
+    fun loadImagesFromUrls(
+        context: Context,
+        fView: FTree,
+        urls: List<String>,
+        onImagesReady: () -> Unit,
+    ) {
+
+        imageBitmaps = fView.imageBitmaps ?: mutableListOf()
+
+        if ( imageBitmaps?.size != urls.size) {
+            for (url in urls) {
+                Glide.with(context)
+                    .asBitmap()
+                    .load(url)
+                    .into(object : CustomTarget<Bitmap>() {
+                        override fun onResourceReady(
+                            resource: Bitmap,
+                            transition: Transition<in Bitmap>?,
+                        ) {
+                            imageBitmaps.add(resource)
+                            if (imageBitmaps.size == urls.size) {
+                                fView.imageBitmaps = imageBitmaps
+                                when (imageBitmaps.size) {
+                                    1 -> {
+                                        imageLayout =
+                                            imageBitmaps[0]?.let { SimpleImageStrategy(it) }
+                                    }
+
+                                    2 -> {
+                                        imageLayout = TwoImageStrategy(imageBitmaps)
+                                    }
+
+                                    3 -> {
+                                        imageLayout = ThreeImageStrategy(imageBitmaps)
+                                    }
+
+                                    4 -> {
+                                        imageLayout = FourImageStrategy(imageBitmaps)
+                                    }
+
+                                    5 -> {
+                                        imageLayout = FiveImageStrategy(imageBitmaps)
+                                    }
                                 }
 
-                                2 -> {
-                                    imageLayout = TwoImageStrategy(imageBitmaps)
-                                }
-
-                                3 -> {
-                                    imageLayout = ThreeImageStrategy(imageBitmaps)
-                                }
-
-                                4 -> {
-                                    imageLayout = FourImageStrategy(imageBitmaps)
-                                }
-
-                                5 -> {
-                                    imageLayout = FiveImageStrategy(imageBitmaps)
-                                }
+                                onImagesReady()  // Gọi khi tất cả ảnh đã load
                             }
-
-                            onImagesReady()  // Gọi khi tất cả ảnh đã load
                         }
+
+                        override fun onLoadCleared(placeholder: Drawable?) {}
+                    })
+            }
+        } else {
+            if (imageBitmaps.size == urls.size) {
+                when (imageBitmaps.size) {
+                    1 -> {
+                        imageLayout = imageBitmaps[0]?.let { SimpleImageStrategy(it) }
                     }
 
-                    override fun onLoadCleared(placeholder: Drawable?) {}
-                })
+                    2 -> {
+                        imageLayout = TwoImageStrategy(imageBitmaps)
+                    }
+
+                    3 -> {
+                        imageLayout = ThreeImageStrategy(imageBitmaps)
+                    }
+
+                    4 -> {
+                        imageLayout = FourImageStrategy(imageBitmaps)
+                    }
+
+                    5 -> {
+                        imageLayout = FiveImageStrategy(imageBitmaps)
+                    }
+                }
+
+                onImagesReady()  // Gọi khi tất cả ảnh đã load
+            }
         }
     }
 
-    override fun draw(canvas: Canvas,  width: Int, height: Int, props: Props) {
-        imageLayout?.draw(canvas,  width, height, props)
+    override fun draw(canvas: Canvas, width: Int, height: Int, props: Props) {
+        imageLayout?.draw(canvas, width, height, props)
     }
 
     override fun layout(left: Int, top: Int, fView: FTree) {

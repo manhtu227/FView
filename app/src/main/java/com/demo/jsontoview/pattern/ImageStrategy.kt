@@ -457,7 +457,7 @@ class FiveImageStrategy(private val arrayImage: MutableList<Bitmap?>) : ImageStr
     ): Pair<Int, Int> {
         var width = 0
         var height = 0
-
+Log.e("FiveImageStrategy", "measure ${ View.MeasureSpec.getSize(widthMeasureSpec)}")
         val widthScreen =
             View.MeasureSpec.getSize(widthMeasureSpec)  - props.padding.left - props.padding.right - props.margin.left - props.margin.right
         var desiredWidth = 0

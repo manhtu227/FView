@@ -20,6 +20,7 @@ object Parser {
             else -> when (dimension.unit) {
                 UnitConfig.Px -> dimension.value
                 UnitConfig.Dp -> (dimension.value * Resources.getSystem().displayMetrics.density).toInt()
+                UnitConfig.Percent -> if (dimension.value > 100) 100 else dimension.value
             }
         }
     }
