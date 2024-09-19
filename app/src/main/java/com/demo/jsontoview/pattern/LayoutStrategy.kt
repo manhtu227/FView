@@ -1,14 +1,17 @@
 package com.demo.jsontoview.pattern
 
 import PaddingConfig
+import ViewTypeConfig
 import android.content.Context
 import android.content.res.Resources
 import android.util.Log
+import android.view.View
 import android.view.View.MeasureSpec
 import androidx.core.view.marginRight
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.jsontoview.CustomViewGroup2
 import com.demo.jsontoview.FTree
+import com.demo.jsontoview.ViewGroupType
 import kotlin.math.min
 
 
@@ -34,14 +37,34 @@ interface LayoutStrategy {
 
 
 class VerticalLayoutStrategy : LayoutStrategy {
+    private var view: View? = null
     override fun layout(fView: FTree, children: List<FTree>): Pair<Int, Int> {
         var currentOffset = 0
 
-        children.forEachIndexed { index, child ->
-            child.setParent(fView)
 
-            child.layout(0, currentOffset)
-            currentOffset += child.totalHeight
+        children.forEachIndexed { index, child ->
+            if(fView.props.test=="test111") {
+                Log.e("CustomViewGroup2", "layout eeeee: ${child.viewType} $index")
+            }
+            if (child.viewType == ViewTypeConfig.ViewGroup) {
+
+                child.setParent(fView)
+                child.layout(0, currentOffset)
+                currentOffset += child.totalHeight
+            } else {
+                fView.customViewGroup?.addView(view)
+
+                fView.customViewGroup?.getChildAt(fView.customViewGroup?.childCount!! - 1)
+                    ?.let { it ->
+                        it.layout(
+                            0,
+                            currentOffset,
+                            it.measuredWidth,
+                            currentOffset + it.measuredHeight
+                        )
+                        currentOffset += it.measuredHeight
+                    }
+            }
         }
 
         return Pair(0, currentOffset)
@@ -55,19 +78,13 @@ class VerticalLayoutStrategy : LayoutStrategy {
         marginPaddingRight: Int,
     ) {
         var top = top
-        Log.e("CustomViewGroup2", "layoutChildComponent: ${viewGroup.childCount} $top")
-//        for (i in viewGroup.childCount - 1 downTo 0) {
-//            val child = viewGroup.getChildAt(i)
-//            top -= child.measuredHeight
-//            child.layout(left, top, child.measuredWidth, top + child.measuredHeight)
-//        }
-        Log.e("CustomViewGroup2", "Resources.getSystem().displayMetrics.widthPixels : ${Resources.getSystem().displayMetrics.widthPixels } ${marginPaddingRight} $top")
+
         for (i in 0 until viewGroup.childCount) {
             val child = viewGroup.getChildAt(i)
             child.layout(
                 left, top, min(
                     left + child.measuredWidth,
-                    Resources.getSystem().displayMetrics.widthPixels  - marginPaddingRight
+                    Resources.getSystem().displayMetrics.widthPixels - marginPaddingRight
                 ), top + child.measuredHeight
             )
             top += child.measuredHeight
@@ -84,15 +101,25 @@ class VerticalLayoutStrategy : LayoutStrategy {
     ) {
 
         parent.children.forEachIndexed { index, child ->
-            child.setCustomViewGroup(viewGroup, context)
+            Log.e("CustomViewGroup2", "measureChildren ne: ${child.viewType}")
+            if (child.viewType == ViewTypeConfig.ViewGroup) {
+                child.setCustomViewGroup(viewGroup, context)
+                child.measure(widthMeasureSpec, heightMeasureSpec)
+                parent.totalHeight += child.totalHeight
+                parent.totalWidth = maxOf(
+                    parent.totalWidth,
+                    child.totalWidth + parent.props.padding.left + parent.props.padding.right
+                )
+            } else {
+                view = ViewGroupType().recyclerView(context, child)
+                parent.customViewGroup?.measureChildPublic(
+                    view!!,
+                    widthMeasureSpec,
+                    heightMeasureSpec
+                )
+                parent.totalHeight += view!!.measuredHeight
+            }
 
-            child.measure(widthMeasureSpec, heightMeasureSpec)
-
-            parent.totalHeight += child.totalHeight
-            parent.totalWidth = maxOf(
-                parent.totalWidth,
-                child.totalWidth + parent.props.padding.left + parent.props.padding.right
-            )
 
         }
 
@@ -110,7 +137,7 @@ class VerticalLayoutStrategy : LayoutStrategy {
             val child = fView.customViewGroup!!.getChildAt(i)
             child.measure(widthMeasureSpec, heightMeasureSpec)
             fView.customViewGroup?.measureChildPublic(child, widthMeasureSpec, heightMeasureSpec)
-            if (i==0) {
+            if (i == 0) {
                 Log.e("CustomViewGroup2", "measureChildrenComponent: $child ${child.height}")
             }
             fView.totalHeight += child?.measuredHeight ?: 0

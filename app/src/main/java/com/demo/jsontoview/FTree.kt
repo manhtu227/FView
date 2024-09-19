@@ -41,7 +41,7 @@ class FTree(
     var measuredWidthDrawable: Int = 0
     var measuredHeightDrawable: Int = 0
 
-    private var context: Context? = null
+    var context: Context? = null
     var customViewGroup: CustomViewGroup2? = null
     private var drawableComponent: DrawableComponent? = null
     private var layoutStrategy: LayoutStrategy? = null
@@ -195,18 +195,15 @@ class FTree(
 
     }
 
-    override fun layout(left: Int, top: Int): Pair<Int, Int> {
+    override fun layout(left: Int, top: Int){
         leftPosition = left
         topPosition = top
         drawableComponent?.layout(left, top, this)
-        val (l, t) = layoutStrategy?.layout(this, children) ?: Pair(0, 0)
+        layoutStrategy?.layout(this, children) ?: Pair(0, 0)
 
         val (leftCal, topCal) = LayoutGravityHandler().calculateGravityPositions(this, left, top)
         leftPosition = leftCal
         topPosition = topCal
-        return Pair(
-            l, t
-        )
     }
 
     override fun draw(canvas: Canvas) {

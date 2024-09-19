@@ -57,28 +57,28 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
     }
 
     fun setFViewTree(fView: FTree) {
-        rootFView = handleChildViews(context!!, fView)
-        layoutStrategy = when (rootFView?.props?.layoutType) {
-            LayoutType.Continues -> {
-                when (rootFView?.props?.orientation) {
-                    OrientationConfig.Vertical -> {
-                        VerticalLayoutStrategy()
-                    }
-
-                    OrientationConfig.Horizontal -> {
-                        HorizontalLayoutStrategy()
-                    }
-
-                    null -> null
-                }
-            }
-
-            LayoutType.Stack -> {
-                StackLayoutStrategy()
-            }
-
-            null -> null
-        }
+        rootFView = fView
+//        layoutStrategy = when (rootFView?.props?.layoutType) {
+//            LayoutType.Continues -> {
+//                when (rootFView?.props?.orientation) {
+//                    OrientationConfig.Vertical -> {
+//                        VerticalLayoutStrategy()
+//                    }
+//
+//                    OrientationConfig.Horizontal -> {
+//                        HorizontalLayoutStrategy()
+//                    }
+//
+//                    null -> null
+//                }
+//            }
+//
+//            LayoutType.Stack -> {
+//                StackLayoutStrategy()
+//            }
+//
+//            null -> null
+//        }
 
         rootFView!!.setCustomViewGroup(this, context)
     }
@@ -94,34 +94,34 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
 
         rootFView?.measure(widthMeasureSpec, heightMeasureSpec)
 
-        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
-        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
-        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
-        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
-        var newWidthMeasure = widthMeasureSpec
-        var newHeightMeasure = heightMeasureSpec
-
-        if (widthMode == MeasureSpec.EXACTLY) {
-            newWidthMeasure = MeasureSpec.makeMeasureSpec(
-                widthSize - rootFView!!.props.margin.left - rootFView!!.props.margin.right,
-                MeasureSpec.EXACTLY
-            )
-
-        }
-        if (heightMode == MeasureSpec.EXACTLY) {
-            newHeightMeasure = MeasureSpec.makeMeasureSpec(
-                heightSize - rootFView!!.props.margin.top - rootFView!!.props.margin.bottom,
-                MeasureSpec.EXACTLY
-            )
-        }
-        if (rootFView != null) {
-            Log.e("CustomViewGroup2", "onMeasure124323423: ${rootFView?.props?.test} $widthMode ${MeasureSpec.getMode(newWidthMeasure)} ${MeasureSpec.getSize(newWidthMeasure)}")
-            layoutStrategy?.measureChildrenComponent(
-                rootFView!!,
-                newWidthMeasure,
-                newHeightMeasure
-            )
-        }
+//        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+//        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+//        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+//        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+//        var newWidthMeasure = widthMeasureSpec
+//        var newHeightMeasure = heightMeasureSpec
+//
+//        if (widthMode == MeasureSpec.EXACTLY) {
+//            newWidthMeasure = MeasureSpec.makeMeasureSpec(
+//                widthSize - rootFView!!.props.margin.left - rootFView!!.props.margin.right,
+//                MeasureSpec.EXACTLY
+//            )
+//
+//        }
+//        if (heightMode == MeasureSpec.EXACTLY) {
+//            newHeightMeasure = MeasureSpec.makeMeasureSpec(
+//                heightSize - rootFView!!.props.margin.top - rootFView!!.props.margin.bottom,
+//                MeasureSpec.EXACTLY
+//            )
+//        }
+//        if (rootFView != null) {
+//            Log.e("CustomViewGroup2", "onMeasure124323423: ${rootFView?.props?.test} $widthMode ${MeasureSpec.getMode(newWidthMeasure)} ${MeasureSpec.getSize(newWidthMeasure)}")
+//            layoutStrategy?.measureChildrenComponent(
+//                rootFView!!,
+//                newWidthMeasure,
+//                newHeightMeasure
+//            )
+//        }
 
         setMeasuredDimension(
             rootFView?.totalWidth ?: 0,
@@ -135,15 +135,15 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        val (leftPosition, topPosition) = rootFView?.layout(0, 0) ?: Pair(0, 0)
+       rootFView?.layout(0, 0) ?: Pair(0, 0)
 
-        layoutStrategy?.layoutChildComponent(
-            this,
-            leftPosition + (rootFView?.props?.margin?.left ?: 0) + (rootFView?.props?.padding?.left
-                ?: 0),
-            topPosition + (rootFView?.props?.padding?.top ?: 0),
-            (rootFView?.props?.padding?.right ?: 0) + (rootFView?.props?.margin?.right ?: 0)
-        )
+//        layoutStrategy?.layoutChildComponent(
+//            this,
+//            leftPosition + (rootFView?.props?.margin?.left ?: 0) + (rootFView?.props?.padding?.left
+//                ?: 0),
+//            topPosition + (rootFView?.props?.padding?.top ?: 0),
+//            (rootFView?.props?.padding?.right ?: 0) + (rootFView?.props?.margin?.right ?: 0)
+//        )
 
     }
 
