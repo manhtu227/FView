@@ -32,8 +32,6 @@ class FTree(
     @SerializedName("viewType") val viewType: ViewTypeConfig,
     @SerializedName("props") val props: Props,
     @SerializedName("children") val children: List<FTree> = emptyList(),
-    val context1: Context? = null,
-    val customViewGroup1: CustomViewGroup2? = null,
 ) : ViewComponent {
     var leftPosition: Int = 0
     var topPosition: Int = 0
@@ -57,6 +55,9 @@ class FTree(
     var widthMode: Int = 0
     var heightMode: Int = 0
 
+    var widthSize: Int = 0
+    var heightSize: Int = 0
+
     private var leftView: Int = 0
     private var topView: Int = 0
 
@@ -64,6 +65,8 @@ class FTree(
     private var colorAnimator: ValueAnimator? = null
 
     var imageBitmaps: MutableList<Bitmap?> = mutableListOf()
+    var imageBitmap: Bitmap? = null
+    var paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
 
     fun setParent(parent: FTree) {
@@ -94,8 +97,14 @@ class FTree(
         widthMode = MeasureSpec.getMode(widthMeasureSpec)
         heightMode = MeasureSpec.getMode(heightMeasureSpec)
 
-        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
-        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+        widthSize = MeasureSpec.getSize(widthMeasureSpec)
+        heightSize = MeasureSpec.getSize(heightMeasureSpec)
+
+        newWidthMeasure = MeasureSpec.makeMeasureSpec(
+            widthSize - props.margin.left - props.margin.right - props.padding.left - props.padding.right,
+            widthMode
+        )
+
 
         measuredWidthDrawable = when (layoutWidth) {
             ViewGroup.LayoutParams.MATCH_PARENT -> {
@@ -127,8 +136,16 @@ class FTree(
             }
 
             else -> {
-                newWidthMeasure = MeasureSpec.makeMeasureSpec(layoutWidth, MeasureSpec.EXACTLY)
-                layoutWidth + props.padding.left + props.padding.right
+                if (props.width.unit == UnitConfig.Percent) {
+                    newWidthMeasure = MeasureSpec.makeMeasureSpec(
+                        widthDrawable - props.padding.left - props.padding.right,
+                        MeasureSpec.EXACTLY
+                    )
+                    widthDrawable
+                } else {
+                    newWidthMeasure = MeasureSpec.makeMeasureSpec(layoutWidth, MeasureSpec.EXACTLY)
+                    layoutWidth + props.padding.left + props.padding.right
+                }
             }
         }
 
@@ -345,7 +362,11 @@ class FTree(
         this.customViewGroup = customViewGroup
         init()
         if (props.drawable?.type == TypeConfig.Image) {
-            (drawableComponent as ImageDrawable).loadImageFromUrl(context, props.drawable.data) {
+            (drawableComponent as ImageDrawable).loadImageFromUrl(
+                context,
+                this,
+                props.drawable.data
+            ) {
                 customViewGroup.requestLayout()
                 customViewGroup.invalidate()
             }

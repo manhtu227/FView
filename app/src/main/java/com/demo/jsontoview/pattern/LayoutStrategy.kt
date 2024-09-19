@@ -39,6 +39,7 @@ class VerticalLayoutStrategy : LayoutStrategy {
 
         children.forEachIndexed { index, child ->
             child.setParent(fView)
+
             child.layout(0, currentOffset)
             currentOffset += child.totalHeight
         }
@@ -107,9 +108,10 @@ class VerticalLayoutStrategy : LayoutStrategy {
         ) {
         for (i in 0 until (fView.customViewGroup?.childCount ?: 0)) {
             val child = fView.customViewGroup!!.getChildAt(i)
+            child.measure(widthMeasureSpec, heightMeasureSpec)
             fView.customViewGroup?.measureChildPublic(child, widthMeasureSpec, heightMeasureSpec)
-            if (child is RecyclerView) {
-                Log.e("CustomViewGroup2", "measureChildrenComponent: ${child.measuredHeight}")
+            if (i==0) {
+                Log.e("CustomViewGroup2", "measureChildrenComponent: $child ${child.height}")
             }
             fView.totalHeight += child?.measuredHeight ?: 0
             fView.totalWidth = maxOf(
@@ -127,7 +129,7 @@ class HorizontalLayoutStrategy : LayoutStrategy {
         children.forEach { child ->
             child.setParent(fView)
             child.layout(currentOffset, 0)
-            currentOffset += child.totalWidth
+            currentOffset += child.totalWidth + fView.props.gap
         }
         return Pair(currentOffset, 0)
 

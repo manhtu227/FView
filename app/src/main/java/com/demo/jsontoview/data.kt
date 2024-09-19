@@ -184,6 +184,7 @@ data class Props(
     @SerializedName("width") val width: DimensionConfig,
     @SerializedName("height") val height: DimensionConfig,
     @SerializedName("background") val background: BackgroundConfig?,
+    @SerializedName("gap") val gap: Int,
     @SerializedName("radius") val radius: Int?,
     @SerializedName("gravity") val gravity: Set<GravityConfig>?,
     @SerializedName("layoutGravity") val layoutGravity: Set<GravityConfig>?,

@@ -13,7 +13,7 @@ class LayoutGravityHandler {
     fun calculateGravityPositions(
         tree: FTree,
         leftPosition: Int,
-         topPosition: Int,
+        topPosition: Int,
     ): Pair<Int, Int> {
         val props = tree.props
         val mParent = tree.mParent
@@ -23,6 +23,11 @@ class LayoutGravityHandler {
         var topPosition = topPosition
 
         val layoutGravity = Parser.parseGravityForView(props.layoutGravity)
+        if (tree.props.test == "thich")
+            Log.e(
+                "FTree",
+                "layoutGravity: ${tree.props.test} ${layoutGravity} ${props.layoutGravity} ${mParent?.widthMode}"
+            );
         if (mParent?.widthMode == MeasureSpec.EXACTLY) {
             val widthLayoutGravity = totalWidth - props.margin.left - props.margin.right
             val parentWidth = (mParent.totalWidth ?: 0) - (mParent?.props?.margin?.left
@@ -30,7 +35,7 @@ class LayoutGravityHandler {
 
             when (layoutGravity) {
                 Gravity.CENTER -> {
-                    leftPosition = ((parentWidth - widthLayoutGravity) / 2)-40
+                    leftPosition = ((parentWidth - widthLayoutGravity) / 2)
                 }
 
 
@@ -39,7 +44,7 @@ class LayoutGravityHandler {
                 }
 
                 Gravity.END -> {
-                    leftPosition = parentWidth - widthLayoutGravity-40
+                    leftPosition = parentWidth - widthLayoutGravity
                 }
 
                 Gravity.BOTTOM -> {

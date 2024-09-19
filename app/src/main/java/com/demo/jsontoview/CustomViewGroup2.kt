@@ -1,73 +1,64 @@
 package com.demo.jsontoview
-
-//import FView
-import MyCustomAdapter
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.demo.jsontoview.pattern.HorizontalLayoutStrategy
+import com.demo.jsontoview.pattern.LayoutStrategy
 import com.demo.jsontoview.pattern.StackLayoutStrategy
 import com.demo.jsontoview.pattern.VerticalLayoutStrategy
 
 class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs) {
 
     private var rootFView: FTree? = null
-    private var checked111 = false
+    private var layoutStrategy: LayoutStrategy? = null
 
     init {
         setWillNotDraw(false)
     }
 
-    fun setFViewTree(fView: FTree) {
-        Log.e("CustomViewGroup2", "setFViewTree $checked111")
-        var checked = false
-        var children: MutableList<FTree> = mutableListOf()
-        var x = 0;
+    private fun shouldAddView(fView: FTree): Boolean {
+        if (fView.viewType == ViewTypeConfig.RecyclerView) {
+            return true
+        }
+        fView.children.forEach {
+            return shouldAddView(it)
+        }
+        return false
+    }
+
+    private fun handleChildViews(context: Context, fView: FTree): FTree {
+        val children: MutableList<FTree> = mutableListOf()
+        var shouldAddViewValue = false
+
         for (child in fView.children) {
+            if (!shouldAddViewValue) {
+                shouldAddViewValue = shouldAddView(child)
+            }
             if (child.viewType == ViewTypeConfig.RecyclerView) {
-                checked = true
-                val view = handleRecyclerView(context!!, child)
-                x++;
+                val view = ViewGroupType().viewGroup(context, child)
                 this.addView(view)
-            } else if (checked) {
-                val view = handleViewGroup(context!!, child)
-                x++;
+            } else if (shouldAddViewValue) {
+                val view = ViewGroupType().recyclerView(context, child)
                 this.addView(view)
             } else {
                 children.add(child)
             }
         }
 
-        rootFView = FTree(
+        return FTree(
             viewType = fView.viewType,
             props = fView.props,
-            children = children,
-            context1 = context,
-            customViewGroup1 = this
+            children = children
         )
-        rootFView!!.setCustomViewGroup(this, context)
     }
 
-    fun measureChildPublic(child: View, widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        // Gọi measureChild từ lớp cha ViewGroup
-        measureChild(child, widthMeasureSpec, heightMeasureSpec)
-    }
-
-
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-
-        val layoutStrategy = when (rootFView?.props?.layoutType) {
+    fun setFViewTree(fView: FTree) {
+        rootFView = handleChildViews(context!!, fView)
+        layoutStrategy = when (rootFView?.props?.layoutType) {
             LayoutType.Continues -> {
                 when (rootFView?.props?.orientation) {
                     OrientationConfig.Vertical -> {
@@ -89,6 +80,17 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
             null -> null
         }
 
+        rootFView!!.setCustomViewGroup(this, context)
+    }
+
+    fun measureChildPublic(child: View, widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        measureChild(child, widthMeasureSpec, heightMeasureSpec)
+    }
+
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
         rootFView?.measure(widthMeasureSpec, heightMeasureSpec)
 
@@ -112,12 +114,14 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
                 MeasureSpec.EXACTLY
             )
         }
-        if (rootFView != null)
+        if (rootFView != null) {
+            Log.e("CustomViewGroup2", "onMeasure124323423: ${rootFView?.props?.test} $widthMode ${MeasureSpec.getMode(newWidthMeasure)} ${MeasureSpec.getSize(newWidthMeasure)}")
             layoutStrategy?.measureChildrenComponent(
                 rootFView!!,
                 newWidthMeasure,
                 newHeightMeasure
             )
+        }
 
         setMeasuredDimension(
             rootFView?.totalWidth ?: 0,
@@ -131,30 +135,7 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        // Bố trí root FView
         val (leftPosition, topPosition) = rootFView?.layout(0, 0) ?: Pair(0, 0)
-
-        val layoutStrategy = when (rootFView?.props?.layoutType) {
-            LayoutType.Continues -> {
-                when (rootFView?.props?.orientation) {
-                    OrientationConfig.Vertical -> {
-                        VerticalLayoutStrategy()
-                    }
-
-                    OrientationConfig.Horizontal -> {
-                        HorizontalLayoutStrategy()
-                    }
-
-                    null -> null
-                }
-            }
-
-            LayoutType.Stack -> {
-                StackLayoutStrategy()
-            }
-
-            null -> null
-        }
 
         layoutStrategy?.layoutChildComponent(
             this,
@@ -162,50 +143,13 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
                 ?: 0),
             topPosition + (rootFView?.props?.padding?.top ?: 0),
             (rootFView?.props?.padding?.right ?: 0) + (rootFView?.props?.margin?.right ?: 0)
-
         )
 
     }
 
     override fun onDraw(canvas: Canvas) {
-        checked111 = true
-
         super.onDraw(canvas)
         rootFView?.draw(canvas)
     }
 
-    private fun handleViewGroup(context: Context, layout: FTree): android.view.View {
-        val viewGroup = CustomViewGroup2(context).apply {
-            setFViewTree(layout)
-        }
-        return viewGroup
-    }
-
-    private fun handleRecyclerView(context: Context, layout: FTree): android.view.View {
-        val recyclerView = RecyclerView(context).apply {
-            layoutManager = if (layout.props.orientation == OrientationConfig.Vertical) {
-                LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-            } else {
-                LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            }
-            layoutParams = ViewGroup.LayoutParams(
-                Parser.parseDimension(layout.props.width),
-                Parser.parseDimension(layout.props.height)
-            ).apply {
-                setPadding(
-                    layout.props.padding.left,
-                    layout.props.padding.top,
-                    layout.props.padding.right,
-                    layout.props.padding.bottom
-                )
-            }
-            if (layout.props.background != null)
-                setBackgroundColor(Color.parseColor(layout.props.background.color))
-
-            adapter = MyCustomAdapter(layout.children)
-
-        }
-
-        return recyclerView
-    }
 }
