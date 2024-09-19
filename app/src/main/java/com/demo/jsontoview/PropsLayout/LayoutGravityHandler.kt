@@ -23,11 +23,7 @@ class LayoutGravityHandler {
         var topPosition = topPosition
 
         val layoutGravity = Parser.parseGravityForView(props.layoutGravity)
-        if (tree.props.test == "thich")
-            Log.e(
-                "FTree",
-                "layoutGravity: ${tree.props.test} ${layoutGravity} ${props.layoutGravity} ${mParent?.widthMode}"
-            );
+
         if (mParent?.widthMode == MeasureSpec.EXACTLY) {
             val widthLayoutGravity = totalWidth - props.margin.left - props.margin.right
             val parentWidth = (mParent.totalWidth ?: 0) - (mParent?.props?.margin?.left

@@ -74,9 +74,9 @@ class ImageDrawable : DrawableComponent {
                     ?: 0) - (fView.mParent?.props?.margin?.right
                     ?: 0) - (fView.mParent?.props?.padding?.left
                     ?: 0) - (fView.mParent?.props?.padding?.right
-                    ?: 0) - props.padding.left - props.padding.right
+                    ?: 0) - props.padding.left - props.padding.right -(fView.mParent?.props?.gap
+                    ?: 0)
 
-            Log.e("ImageDrawable", "saoooooo: $widthParent")
             imageBitmap?.let {
                 val desiredWidth = (widthParent * props.width.value / 100)
                 val scaleFactor = desiredWidth / (it.width ?: 1).toFloat()

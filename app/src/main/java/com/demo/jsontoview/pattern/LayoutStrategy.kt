@@ -16,7 +16,7 @@ import kotlin.math.min
 
 
 interface LayoutStrategy {
-    fun layout(fView: FTree, children: List<FTree>): Pair<Int, Int>
+    fun layout(fView: FTree, children: List<FTree>, width: Int, height: Int): Pair<Int, Int>
     fun layoutChildComponent(
         viewGroup: CustomViewGroup2,
         left: Int,
@@ -38,18 +38,21 @@ interface LayoutStrategy {
 
 class VerticalLayoutStrategy : LayoutStrategy {
     private var view: View? = null
-    override fun layout(fView: FTree, children: List<FTree>): Pair<Int, Int> {
+    override fun layout(
+        fView: FTree,
+        children: List<FTree>,
+        width: Int,
+        height: Int,
+    ): Pair<Int, Int> {
         var currentOffset = 0
-
+        var height1=height
 
         children.forEachIndexed { index, child ->
-            if(fView.props.test=="test111") {
-                Log.e("CustomViewGroup2", "layout eeeee: ${child.viewType} $index")
-            }
-            if (child.viewType == ViewTypeConfig.ViewGroup) {
 
+            if (child.viewType == ViewTypeConfig.ViewGroup) {
                 child.setParent(fView)
-                child.layout(0, currentOffset)
+                child.layout(0, currentOffset, width, height1)
+                height1+=child.totalHeight
                 currentOffset += child.totalHeight
             } else {
                 fView.customViewGroup?.addView(view)
@@ -57,11 +60,12 @@ class VerticalLayoutStrategy : LayoutStrategy {
                 fView.customViewGroup?.getChildAt(fView.customViewGroup?.childCount!! - 1)
                     ?.let { it ->
                         it.layout(
-                            0,
-                            currentOffset,
-                            it.measuredWidth,
-                            currentOffset + it.measuredHeight
+                            width,
+                            height1,
+                            width+ it.measuredWidth,
+                            height1 + it.measuredHeight
                         )
+                        height1+=it.measuredHeight
                         currentOffset += it.measuredHeight
                     }
             }
@@ -151,11 +155,16 @@ class VerticalLayoutStrategy : LayoutStrategy {
 }
 
 class HorizontalLayoutStrategy : LayoutStrategy {
-    override fun layout(fView: FTree, children: List<FTree>): Pair<Int, Int> {
+    override fun layout(
+        fView: FTree,
+        children: List<FTree>,
+        width: Int,
+        height: Int,
+    ): Pair<Int, Int> {
         var currentOffset = 0
         children.forEach { child ->
             child.setParent(fView)
-            child.layout(currentOffset, 0)
+            child.layout(currentOffset, 0, width, height)
             currentOffset += child.totalWidth + fView.props.gap
         }
         return Pair(currentOffset, 0)
@@ -201,10 +210,15 @@ class HorizontalLayoutStrategy : LayoutStrategy {
 }
 
 class StackLayoutStrategy : LayoutStrategy {
-    override fun layout(fView: FTree, children: List<FTree>): Pair<Int, Int> {
+    override fun layout(
+        fView: FTree,
+        children: List<FTree>,
+        width: Int,
+        height: Int,
+    ): Pair<Int, Int> {
         children.forEach { child ->
             child.setParent(fView)
-            child.layout(0, 0)
+            child.layout(0, 0, width, height)
         }
         return Pair(0, 0)
     }

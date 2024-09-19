@@ -61,7 +61,7 @@ class FTree(
     private var leftView: Int = 0
     private var topView: Int = 0
 
-    private var backgroundColor: String? = null
+    private var backgroundColor: String? = "#bc594a"
     private var colorAnimator: ValueAnimator? = null
 
     var imageBitmaps: MutableList<Bitmap?> = mutableListOf()
@@ -104,7 +104,6 @@ class FTree(
             widthSize - props.margin.left - props.margin.right - props.padding.left - props.padding.right,
             widthMode
         )
-
 
         measuredWidthDrawable = when (layoutWidth) {
             ViewGroup.LayoutParams.MATCH_PARENT -> {
@@ -195,11 +194,20 @@ class FTree(
 
     }
 
-    override fun layout(left: Int, top: Int){
+    override fun layout(left: Int, top: Int, width: Int, height: Int) {
         leftPosition = left
         topPosition = top
+
         drawableComponent?.layout(left, top, this)
-        layoutStrategy?.layout(this, children) ?: Pair(0, 0)
+        if(props.test=="testnee"){
+            Log.e("FTree", "layout chan qua: ${props.test} $left $top $width $height")
+        }
+        layoutStrategy?.layout(
+            this,
+            children,
+            width + props.margin.left + props.padding.left,
+            height + props.margin.top + props.padding.top
+        )
 
         val (leftCal, topCal) = LayoutGravityHandler().calculateGravityPositions(this, left, top)
         leftPosition = leftCal
@@ -213,10 +221,12 @@ class FTree(
             leftPosition.toFloat() + props.margin.left,
             topPosition.toFloat() + props.margin.top
         )
+
         leftView = -canvas.getClipBounds().left
         topView = -canvas.getClipBounds().top
 
         // Vẽ nền của FView
+//        backgroundColor="#bc594a"
         if (props.background != null || backgroundColor != null) {
             val paint = Paint().apply {
                 color = Color.parseColor(backgroundColor ?: props.background?.color)
@@ -254,7 +264,9 @@ class FTree(
                 it.draw(canvas)
             }
         }
+
         canvas.restore()
+
     }
 
     private fun animateBackgroundColor(startColor: Int, endColor: Int) {

@@ -135,7 +135,7 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-       rootFView?.layout(0, 0) ?: Pair(0, 0)
+       rootFView?.layout(0, 0,0,0) ?: Pair(0, 0)
 
 //        layoutStrategy?.layoutChildComponent(
 //            this,
