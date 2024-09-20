@@ -17,7 +17,6 @@ import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import com.demo.jsontoview.PropsLayout.LayoutGravityHandler
 import com.demo.jsontoview.drawable.ButtonDrawable
-import com.demo.jsontoview.drawable.ImageArrayDrawable
 import com.demo.jsontoview.drawable.ImageDrawable
 import com.demo.jsontoview.drawable.TextDrawable
 import com.demo.jsontoview.models.DrawableComponent
@@ -46,6 +45,8 @@ class FTree(
     private var drawableComponent: DrawableComponent? = null
     private var layoutStrategy: LayoutStrategy? = null
 
+    var pendingViews: MutableMap<Int,View>? = null;
+
     var totalWidth: Int = 0
     var totalHeight: Int = 0
 
@@ -64,9 +65,9 @@ class FTree(
     private var backgroundColor: String? = "#bc594a"
     private var colorAnimator: ValueAnimator? = null
 
-    var imageBitmaps: MutableList<Bitmap?> = mutableListOf()
     var imageBitmap: Bitmap? = null
     var paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
 
 
     fun setParent(parent: FTree) {
@@ -121,7 +122,6 @@ class FTree(
                     else -> widthDrawable
                 }
             }
-
             ViewGroup.LayoutParams.WRAP_CONTENT -> {
                 when (widthMode) {
                     MeasureSpec.EXACTLY -> widthDrawable
@@ -186,8 +186,6 @@ class FTree(
 
         layoutStrategy?.measureChildren(
             this,
-            context!!,
-            customViewGroup!!,
             newWidthMeasure,
             newHeightMeasure
         )
@@ -199,12 +197,9 @@ class FTree(
         topPosition = top
 
         drawableComponent?.layout(left, top, this)
-        if(props.test=="testnee"){
-            Log.e("FTree", "layout chan qua: ${props.test} $left $top $width $height")
-        }
+
         layoutStrategy?.layout(
             this,
-            children,
             width + props.margin.left + props.padding.left,
             height + props.margin.top + props.padding.top
         )
@@ -323,25 +318,20 @@ class FTree(
     private fun init() {
         totalHeight = 0;
         totalWidth = 0;
-
+        if(pendingViews==null) {
+            pendingViews = mutableMapOf()
+        }
 
         drawableComponent = when (props.drawable?.type) {
             TypeConfig.Text -> {
                 TextDrawable()
             }
-
             TypeConfig.Image -> {
                 ImageDrawable()
             }
-
             TypeConfig.Button -> {
                 ButtonDrawable(context!!)
             }
-
-            TypeConfig.ArrayImage -> {
-                ImageArrayDrawable()
-            }
-
             else -> {
                 null
             }
@@ -375,15 +365,6 @@ class FTree(
                 context,
                 this,
                 props.drawable.data
-            ) {
-                customViewGroup.requestLayout()
-                customViewGroup.invalidate()
-            }
-        } else if (props.drawable?.type == TypeConfig.ArrayImage) {
-            (drawableComponent as ImageArrayDrawable).loadImagesFromUrls(
-                context,
-                this,
-                props.drawable.dataList
             ) {
                 customViewGroup.requestLayout()
                 customViewGroup.invalidate()

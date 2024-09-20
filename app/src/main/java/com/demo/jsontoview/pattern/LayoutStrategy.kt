@@ -16,23 +16,14 @@ import kotlin.math.min
 
 
 interface LayoutStrategy {
-    fun layout(fView: FTree, children: List<FTree>, width: Int, height: Int): Pair<Int, Int>
-    fun layoutChildComponent(
-        viewGroup: CustomViewGroup2,
-        left: Int,
-        top: Int,
-        marginPaddingRight: Int,
-    )
+    fun layout(fView: FTree, width: Int, height: Int): Pair<Int, Int>
 
     fun measureChildren(
         parent: FTree,
-        context: Context,
-        viewGroup: CustomViewGroup2,
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
     )
 
-    fun measureChildrenComponent(fView: FTree, widthMeasureSpec: Int, heightMeasureSpec: Int)
 }
 
 
@@ -40,34 +31,33 @@ class VerticalLayoutStrategy : LayoutStrategy {
     private var view: View? = null
     override fun layout(
         fView: FTree,
-        children: List<FTree>,
         width: Int,
         height: Int,
     ): Pair<Int, Int> {
         var currentOffset = 0
-        var height1=height
+        var height1 = height
 
-        children.forEachIndexed { index, child ->
-
+        fView.children.forEachIndexed { index, child ->
             if (child.viewType == ViewTypeConfig.ViewGroup) {
                 child.setParent(fView)
                 child.layout(0, currentOffset, width, height1)
-                height1+=child.totalHeight
+                height1 += child.totalHeight
                 currentOffset += child.totalHeight
             } else {
-                fView.customViewGroup?.addView(view)
-
-                fView.customViewGroup?.getChildAt(fView.customViewGroup?.childCount!! - 1)
-                    ?.let { it ->
+                view = fView.pendingViews!![index]
+                val indexView = fView.customViewGroup?.indexOfChild(view)
+                if (indexView != null && indexView != -1) {
+                    fView.customViewGroup?.getChildAt(indexView)?.let { it ->
                         it.layout(
                             width,
-                            height1,
-                            width+ it.measuredWidth,
+                            height1 ,
+                            width + it.measuredWidth,
                             height1 + it.measuredHeight
                         )
-                        height1+=it.measuredHeight
+                        height1 += it.measuredHeight
                         currentOffset += it.measuredHeight
                     }
+                }
             }
         }
 
@@ -75,39 +65,16 @@ class VerticalLayoutStrategy : LayoutStrategy {
 
     }
 
-    override fun layoutChildComponent(
-        viewGroup: CustomViewGroup2,
-        left: Int,
-        top: Int,
-        marginPaddingRight: Int,
-    ) {
-        var top = top
-
-        for (i in 0 until viewGroup.childCount) {
-            val child = viewGroup.getChildAt(i)
-            child.layout(
-                left, top, min(
-                    left + child.measuredWidth,
-                    Resources.getSystem().displayMetrics.widthPixels - marginPaddingRight
-                ), top + child.measuredHeight
-            )
-            top += child.measuredHeight
-        }
-
-    }
 
     override fun measureChildren(
         parent: FTree,
-        context: Context,
-        viewGroup: CustomViewGroup2,
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
     ) {
 
         parent.children.forEachIndexed { index, child ->
-            Log.e("CustomViewGroup2", "measureChildren ne: ${child.viewType}")
             if (child.viewType == ViewTypeConfig.ViewGroup) {
-                child.setCustomViewGroup(viewGroup, context)
+                child.setCustomViewGroup(parent.customViewGroup!!, parent.context!!)
                 child.measure(widthMeasureSpec, heightMeasureSpec)
                 parent.totalHeight += child.totalHeight
                 parent.totalWidth = maxOf(
@@ -115,11 +82,20 @@ class VerticalLayoutStrategy : LayoutStrategy {
                     child.totalWidth + parent.props.padding.left + parent.props.padding.right
                 )
             } else {
-                view = ViewGroupType().recyclerView(context, child)
+                Log.e(
+                    "VerticalLayoutStrategy",
+                    "measureChildren: ${parent.pendingViews} ${parent.pendingViews!!.containsKey(index)}"
+                )
+                view = if (parent.pendingViews!!.containsKey(index)) parent.pendingViews!![index]
+                else {
+                    val item = ViewGroupType().recyclerView(parent.context!!, child)
+                    parent.customViewGroup?.addView(item)
+                    parent.pendingViews!![index] = item
+                    item
+                }
+                // get key of view
                 parent.customViewGroup?.measureChildPublic(
-                    view!!,
-                    widthMeasureSpec,
-                    heightMeasureSpec
+                    view!!, widthMeasureSpec, heightMeasureSpec
                 )
                 parent.totalHeight += view!!.measuredHeight
             }
@@ -131,38 +107,17 @@ class VerticalLayoutStrategy : LayoutStrategy {
 
     }
 
-    override fun measureChildrenComponent(
-        fView: FTree,
-        widthMeasureSpec: Int,
-        heightMeasureSpec: Int,
 
-        ) {
-        for (i in 0 until (fView.customViewGroup?.childCount ?: 0)) {
-            val child = fView.customViewGroup!!.getChildAt(i)
-            child.measure(widthMeasureSpec, heightMeasureSpec)
-            fView.customViewGroup?.measureChildPublic(child, widthMeasureSpec, heightMeasureSpec)
-            if (i == 0) {
-                Log.e("CustomViewGroup2", "measureChildrenComponent: $child ${child.height}")
-            }
-            fView.totalHeight += child?.measuredHeight ?: 0
-            fView.totalWidth = maxOf(
-                fView.totalWidth,
-                child.measuredWidth + fView.props.padding.left + fView.props.padding.right
-            )
-        }
-
-    }
 }
 
 class HorizontalLayoutStrategy : LayoutStrategy {
     override fun layout(
         fView: FTree,
-        children: List<FTree>,
         width: Int,
         height: Int,
     ): Pair<Int, Int> {
         var currentOffset = 0
-        children.forEach { child ->
+        fView.children.forEach { child ->
             child.setParent(fView)
             child.layout(currentOffset, 0, width, height)
             currentOffset += child.totalWidth + fView.props.gap
@@ -171,24 +126,14 @@ class HorizontalLayoutStrategy : LayoutStrategy {
 
     }
 
-    override fun layoutChildComponent(
-        viewGroup: CustomViewGroup2,
-        left: Int,
-        top: Int,
-        marginPaddingRight: Int,
-    ) {
-
-    }
 
     override fun measureChildren(
         parent: FTree,
-        context: Context,
-        viewGroup: CustomViewGroup2,
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
     ) {
         parent.children.forEachIndexed { index, child ->
-            child.setCustomViewGroup(viewGroup, context)
+            child.setCustomViewGroup(parent.customViewGroup!!, parent.context!!)
 
             child.measure(widthMeasureSpec, heightMeasureSpec)
 
@@ -200,47 +145,30 @@ class HorizontalLayoutStrategy : LayoutStrategy {
         }
     }
 
-    override fun measureChildrenComponent(
-        fView: FTree,
-        widthMeasureSpec: Int,
-        heightMeasureSpec: Int,
-    ) {
 
-    }
 }
 
 class StackLayoutStrategy : LayoutStrategy {
     override fun layout(
         fView: FTree,
-        children: List<FTree>,
         width: Int,
         height: Int,
     ): Pair<Int, Int> {
-        children.forEach { child ->
+        fView.children.forEach { child ->
             child.setParent(fView)
             child.layout(0, 0, width, height)
         }
         return Pair(0, 0)
     }
 
-    override fun layoutChildComponent(
-        viewGroup: CustomViewGroup2,
-        left: Int,
-        top: Int,
-        marginPaddingRight: Int,
-    ) {
-
-    }
 
     override fun measureChildren(
         parent: FTree,
-        context: Context,
-        viewGroup: CustomViewGroup2,
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
     ) {
         parent.children.forEach { child ->
-            child.setCustomViewGroup(viewGroup, context)
+            child.setCustomViewGroup(parent.customViewGroup!!, parent.context!!)
             child.measure(widthMeasureSpec, heightMeasureSpec)
 
             parent.totalWidth = maxOf(parent.totalWidth, child.totalWidth)
@@ -248,12 +176,5 @@ class StackLayoutStrategy : LayoutStrategy {
         }
     }
 
-    override fun measureChildrenComponent(
-        fView: FTree,
-        widthMeasureSpec: Int,
-        heightMeasureSpec: Int,
-    ) {
-
-    }
 }
 

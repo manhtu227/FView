@@ -123,10 +123,7 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
             )
             drawable.draw(canvas) // Vẽ icon
         }
-        Log.e(
-            "ButtonDrawable",
-            "draw2: ${leftPosition} ${iconDrawable!!.intrinsicWidth}  ${boringLayout!!.width}"
-        )
+
 
         val leftText =
             leftPosition + (iconDrawable?.intrinsicWidth ?: 0) + (props.drawable?.props?.gap ?: 0)
@@ -198,20 +195,6 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
 
     }
 
-    fun onTouchEvent(event: MotionEvent, x: Float, y: Float): Boolean {
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> {
-                isPressed = true
-                return true
-            }
-
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                isPressed = false
-                return true
-            }
-        }
-        return false
-    }
 
 
 }
