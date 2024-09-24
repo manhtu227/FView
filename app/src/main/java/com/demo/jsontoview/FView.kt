@@ -1,268 +1,113 @@
+package com.demo.jsontoview
+
+import Props
+import ViewTypeConfig
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.Drawable
-import android.text.StaticLayout
-import android.text.TextPaint
+import android.graphics.RectF
 import android.util.Log
-import android.view.View.MeasureSpec
-import android.view.ViewGroup
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
-import com.demo.jsontoview.CustomViewGroup2
-import com.demo.jsontoview.Parser
+import android.view.MotionEvent
+import android.view.View
+import com.demo.jsontoview.PropsLayout.LayoutGravityHandler
+import com.demo.jsontoview.drawable.ButtonDrawable
+import com.demo.jsontoview.drawable.ImageDrawable
+import com.demo.jsontoview.drawable.TextDrawable
+import com.demo.jsontoview.helpers.SizeMeasurer
+import com.demo.jsontoview.models.DrawableComponent
+import com.demo.jsontoview.models.ViewComponent
+import com.demo.jsontoview.pattern.HorizontalLayoutStrategy
+import com.demo.jsontoview.pattern.LayoutStrategy
+import com.demo.jsontoview.pattern.StackLayoutStrategy
+import com.demo.jsontoview.pattern.VerticalLayoutStrategy
 import com.google.gson.annotations.SerializedName
 
-class FView(
+class FTree(
     @SerializedName("viewType") val viewType: ViewTypeConfig,
     @SerializedName("props") val props: Props,
-    @SerializedName("children") val children: List<FView> = emptyList(),
+    @SerializedName("children") val children: List<FTree> = emptyList(),
+) : ViewComponent {
 
-    ) {
-    var measuredWidthDrawable: Int = 0
-    var measuredHeightDrawable: Int = 0
+    internal var mParent: FTree? = null
 
-    var totalWidth: Int = 0
-    var totalHeight: Int = 0
+    var context: Context? = null
+    var customViewGroup: CustomViewGroup2? = null
+
+    private var drawableComponent: DrawableComponent? = null
+    private var layoutStrategy: LayoutStrategy? = null
+
+    var pendingViews: MutableMap<Int, View>? = null;
+
+    var measureWidth: Int = 0
+    var measureHeight: Int = 0
+
+    var leftPosition: Int = 0
+    var topPosition: Int = 0
+
+    private var leftView: Int = 0
+    private var topView: Int = 0
+
+    private var backgroundColor: String? = "#bc594a"
+    private var colorAnimator: ValueAnimator? = null
 
 
-    private var leftPosition: Int = 0
-    private var topPosition: Int = 0
-    private var staticLayout: StaticLayout? = null
-    private var imageBitmap: Bitmap? = null
-    private var context: Context? = null
-    private var customViewGroup: CustomViewGroup2? = null  // Thêm tham chiếu đến CustomViewGroup2
-
-
-    private var padding: PaddingConfig = props.padding
-    private var margin: PaddingConfig = props.margin
-
-    fun setPaddingParent(padding: PaddingConfig) {
-        Log.e("FView", "FView ne anh ơi22: $padding")
-        this.padding = padding
+    fun setParent(parent: FTree) {
+        mParent = parent
     }
 
-    fun setMarginParent(marginNow: PaddingConfig) {
-        margin = marginNow
-    }
-
-    fun setCustomViewGroup(customViewGroup: CustomViewGroup2, context: Context) {
-        this.context = context
-        this.customViewGroup = customViewGroup
-
-        if (props.drawable?.type == TypeConfig.Image) {
-            loadImageFromUrl(props.drawable.data)
-        }
-    }
-
-
-    // Hàm đo lường FView dựa trên props
-    fun measure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val layoutWidth = Parser.parseDimension(props.width)
-        val layoutHeight = Parser.parseDimension(props.height)
-        padding =
-            if (padding != null) padding else props.padding
-        margin =
-            if (margin != null) margin else props.margin
-
-        val (internalWidth, internalHeight) =
-            measureDrawable(props, widthMeasureSpec, heightMeasureSpec)
-
-        measuredWidthDrawable = when (layoutWidth) {
-            ViewGroup.LayoutParams.MATCH_PARENT -> MeasureSpec.getSize(widthMeasureSpec)
-            ViewGroup.LayoutParams.WRAP_CONTENT -> internalWidth
-            else -> layoutWidth
-        }
-        measuredHeightDrawable = when (layoutHeight) {
-            ViewGroup.LayoutParams.MATCH_PARENT -> MeasureSpec.getSize(heightMeasureSpec) // mode = MeasureSpec.EXACTLY
-            ViewGroup.LayoutParams.WRAP_CONTENT -> internalHeight
-            else -> layoutHeight
-        }
-        if (totalWidth == 0) totalWidth += measuredWidthDrawable
-        if (totalHeight == 0) totalHeight += measuredHeightDrawable
-
-        children.forEachIndexed { index, child ->
-            child.setCustomViewGroup(customViewGroup!!, context!!)
-
-            when (props.layoutType) {
-                LayoutType.Continues -> {
-
-                    if (props.orientation == OrientationConfig.Vertical) {
-
-                        val paddingChild = PaddingConfig(
-                            padding.left + child.props.padding.left,
-                            padding.right + child.props.padding.right,
-                            child.props.padding.top,
-                            child.props.padding.bottom
-                        )
-                        val marginChild = PaddingConfig(
-                            margin.left + child.props.margin.left,
-                            margin.right + child.props.margin.right,
-                            margin.top,
-                            margin.bottom
-                        )
-                        if (index == 0) {
-                            paddingChild.top = padding.top + child.props.padding.top
-                            marginChild.top = margin.top + child.props.margin.top
-                        }
-                        if (index == children.size - 1) {
-                            paddingChild.bottom = padding.bottom + child.props.padding.bottom
-                            marginChild.bottom = margin.bottom + child.props.margin.bottom
-                        }
-                        child.setPaddingParent(paddingChild)
-                        child.setMarginParent(marginChild)
-                        child.measure(widthMeasureSpec, heightMeasureSpec)
-                    } else if (props.orientation == OrientationConfig.Horizontal) {
-                        val paddingChild = PaddingConfig(
-                            padding.left,
-                            padding.right,
-                            child.props.padding.top + child.props.padding.top,
-                            child.props.padding.bottom + child.props.padding.bottom
-                        )
-                        val marginChild = PaddingConfig(
-                            margin.left,
-                            margin.right,
-                            margin.top + child.props.margin.top,
-                            margin.bottom + child.props.margin.bottom
-                        )
-                        if (index == 0) {
-                            paddingChild.left = padding.left + child.props.padding.left
-                            marginChild.left = margin.left + child.props.margin.left
-                        }
-                        if (index == children.size - 1) {
-                            paddingChild.right = padding.right + child.props.padding.right
-                            marginChild.right = margin.right + child.props.margin.right
-                        }
-                        child.setPaddingParent(paddingChild)
-                        child.setMarginParent(marginChild)
-                        child.measure(widthMeasureSpec, heightMeasureSpec)
-                    }
-
-                }
-
-                LayoutType.Stack -> {
-                    child.measure(widthMeasureSpec, heightMeasureSpec)
-                }
-            }
-
-            when (props.layoutType) {
-                LayoutType.Continues -> {
-                    // Nếu là Continues, cộng dồn chiều rộng hoặc chiều cao của các child
-                    if (props.orientation == OrientationConfig.Vertical) {
-
-                        totalHeight += child.measuredHeightDrawable + margin.top + margin.bottom
-                        totalWidth =
-                            maxOf(
-                                totalWidth,
-                                child.measuredWidthDrawable
-                            )  // Chiều rộng lớn nhất cho vertical
-                    } else if (props.orientation == OrientationConfig.Horizontal) {
-                        totalWidth += child.measuredWidthDrawable
-                        totalHeight = maxOf(
-                            totalHeight,
-                            child.measuredHeightDrawable + margin.top + margin.bottom
-                        )  // Chiều cao lớn nhất cho horizontal
-                    }
-                }
-
-                LayoutType.Stack -> {
-                    // Nếu là Stack, lấy giá trị lớn nhất
-                    totalWidth = maxOf(totalWidth, child.measuredWidthDrawable)
-                    totalHeight = maxOf(totalHeight, child.measuredHeightDrawable)
-                }
-            }
-        }
-    }
-
-    private fun measureDrawable(props: Props, widthMeasureSpec: Int, heightMeasureSpec: Int)
-            : Pair<Int, Int> {
-        var width = 0
-        var height = 0
-
-        if (props.drawable?.type == TypeConfig.Text) {
-            val textPaint = TextPaint().apply {
-                textSize = props.drawable.props.textSize.toFloat()
-                color = Color.parseColor(props.drawable.props.textColor)
-            }
-            val widthMaxText =
-                MeasureSpec.getSize(widthMeasureSpec) - padding.left - padding.right - margin.left - margin.right
-            staticLayout = StaticLayout.Builder.obtain(
-                props.drawable.data,
-                0,
-                props.drawable.data.length,
-                textPaint,
-                if (widthMaxText < 0) 0 else widthMaxText
-            ).setText(props.drawable.data).build()
-
-            height =
-                staticLayout!!.height + props.padding.top + props.padding.bottom
-            width =
-                staticLayout!!.width + props.padding.left + props.padding.right
-        } else if (
-            props.drawable?.type == TypeConfig.Image
-        ) {
-            height = (imageBitmap?.height ?: 0) + props.padding.top + props.padding.bottom
-            width = (imageBitmap?.width ?: 0) + props.padding.left + props.padding.right
-        }
-
-        return Pair(width, height)
-    }
-
-    // Hàm để bố trí FView (đặt vị trí cho các child)
-    fun layout(left: Int, top: Int) {
-        leftPosition = left
-        topPosition = top
-        Log.e("FView", "measure layout: $imageBitmap")
-
-        var currentOffset = 0
-
-        // Bố trí từng child dựa trên LayoutType và orientation
-        when (props.layoutType) {
-            LayoutType.Continues -> {
-                if (props.orientation == OrientationConfig.Vertical) {
-                    children.forEach { child ->
-                        child.layout(
-                            leftPosition,
-                            topPosition + currentOffset
-                        )
-                        currentOffset += child.measuredHeightDrawable + child.props.margin.top + child.props.margin.bottom
-                    }
-                } else if (props.orientation == OrientationConfig.Horizontal) {
-                    children.forEach { child ->
-                        child.layout(
-                            leftPosition + props.padding.left + currentOffset,
-                            topPosition + props.padding.top
-                        )
-                        currentOffset += child.measuredWidthDrawable + child.props.margin.left + child.props.margin.right
-
-                    }
-                }
-            }
-
-            LayoutType.Stack -> {
-                children.forEach { child ->
-                    child.layout(
-                        leftPosition + props.padding.left,
-                        topPosition + props.padding.top
-                    )
-                }
-            }
-        }
-
-        Log.d(
-            "FView",
-            "layout: $leftPosition, $topPosition, width: $measuredWidthDrawable, height: $measuredHeightDrawable"
+    override fun measure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        // tính width height của drawable
+        drawableComponent?.measure(
+            widthMeasureSpec, heightMeasureSpec, this
         )
 
+        var newWidthMeasureSpec = widthMeasureSpec
+        var newHeightMeasureSpec = heightMeasureSpec
+
+        // tính toán dựa trên layout width
+        val sizeMeasure = SizeMeasurer()
+        sizeMeasure.measureWidth(widthMeasureSpec, drawableComponent?.width ?: 0, this)
+            .let { (width, newWidth) ->
+                measureWidth = width + props.margin.left + props.margin.right
+                newWidthMeasureSpec = newWidth
+            }
+
+        sizeMeasure.measureHeight(heightMeasureSpec, drawableComponent?.height ?: 0, this)
+            .let { (height, newHeight) ->
+                measureHeight = height + props.margin.top + props.margin.bottom
+                newHeightMeasureSpec = newHeight
+            }
+
+
+        layoutStrategy?.measureChildren(
+            this,
+            newWidthMeasureSpec,
+            newHeightMeasureSpec
+        )
 
     }
 
-    // Hàm để vẽ FView lên Canvas
-    fun draw(canvas: Canvas) {
-//        Log.e("FView", "measure canvas: ${props.background.color} $totalWidth $totalHeight")
+    override fun layout(left: Int, top: Int, width: Int, height: Int) {
+        leftPosition = left
+        topPosition = top
+
+        drawableComponent?.layout(left, top, this)
+
+        layoutStrategy?.layout(
+            this,
+            width + props.margin.left + props.padding.left,
+            height + props.margin.top + props.padding.top
+        )
+
+        LayoutGravityHandler().calculateGravityPositions(this)
+
+    }
+
+    override fun draw(canvas: Canvas) {
         canvas.save()
 
         canvas.translate(
@@ -270,97 +115,162 @@ class FView(
             topPosition.toFloat() + props.margin.top
         )
 
+        leftView = -canvas.getClipBounds().left
+        topView = -canvas.getClipBounds().top
 
         // Vẽ nền của FView
-        val paint = Paint().apply {
-//            color = Color.parseColor(props.background.color)
+//        backgroundColor="#bc594a"
+        if (props.background != null || backgroundColor != null) {
+            val paint = Paint().apply {
+                color = Color.parseColor(backgroundColor ?: props.background?.color)
+            }
+
+            val rect = RectF(
+                0f,
+                0f,
+                measureWidth.toFloat() - props.margin.right - props.margin.left,
+                measureHeight.toFloat() - props.margin.bottom - props.margin.top
+            )
+            if (props.radius != null) {
+                canvas.drawRoundRect(rect, props.radius.toFloat(), props.radius.toFloat(), paint)
+            } else
+                canvas.drawRect(
+                    rect,
+                    paint
+                )
         }
-        canvas.drawRect(
-            0f,
-            0f,
-            totalWidth.toFloat(),
-            totalHeight.toFloat(),
-            paint
+
+        canvas.translate(
+            props.padding.left.toFloat(),
+            props.padding.top.toFloat()
         )
 
-        // Vẽ drawable (text hoặc image)
-        props.drawable.let { drawable ->
-            when (drawable?.type) {
-                TypeConfig.Text -> drawText(canvas, drawable)
-                TypeConfig.Image -> drawImage(canvas, drawable)
-                TypeConfig.Button -> TODO()
-                TypeConfig.ArrayImage -> TODO()
-                TypeConfig.Avatar -> TODO()
-                null -> TODO()
-            }
-        }
+        drawableComponent?.draw(
+            canvas,
+            props
+        )
 
-        // Vẽ các child
-        children.forEach { child ->
-            child.draw(canvas)
+        children.forEach {
+            if (it.viewType == ViewTypeConfig.ViewGroup) {
+                it.draw(canvas)
+            }
         }
 
         canvas.restore()
+
     }
 
-    fun requestLayout() {
-//        measure(measuredWidthDrawable, measuredHeightDrawable)
-//        layout(leftPosition, topPosition)
-        customViewGroup?.requestLayout()
-        customViewGroup?.invalidate()
-
-//
-    }
-
-    // Vẽ text nếu drawable là dạng text
-    private fun drawText(canvas: Canvas, drawable: DrawableConfig) {
-        val textPaint = TextPaint().apply {
-            textSize = drawable.props.textSize.toFloat()
-            color = Color.parseColor(drawable.props.textColor)
-        }
-
-        // Vẽ text từ StaticLayout
-        staticLayout?.let {
-            canvas.save()
-            canvas.translate(props.padding.left.toFloat(), props.padding.top.toFloat())
-            it.draw(canvas)
-            canvas.restore()
-        }
-    }
-
-    // Vẽ image placeholder nếu drawable là dạng image
-    private fun drawImage(canvas: Canvas, drawable: DrawableConfig) {
-        imageBitmap?.let { bitmap ->
-            canvas.drawBitmap(bitmap, 0f, 0f, null)
-        } ?: run {
-            val paint = Paint().apply {
-                textSize = drawable.props.textSize.toFloat()
-                color = Color.RED
+    private fun animateBackgroundColor(startColor: Int, endColor: Int) {
+        colorAnimator?.cancel() // Hủy bỏ animation trước đó nếu có
+        colorAnimator = ValueAnimator.ofObject(ArgbEvaluator(), startColor, endColor).apply {
+            duration = 300 // Thời gian animation, có thể điều chỉnh
+            addUpdateListener { animator ->
+                backgroundColor =
+                    String.format("#%06X", 0xFFFFFF and (animator.animatedValue as Int))
+                customViewGroup?.invalidate() // Vẽ lại view để cập nhật màu nền
             }
-            canvas.drawText("Image Placeholder", 0f, drawable.props.textSize.toFloat(), paint)
+            start()
         }
     }
 
-    private fun loadImageFromUrl(url: String) {
-        Log.e("FView", "loadImageFromUrl: $context")
-        Glide.with(context!!)
-            .asBitmap()
-            .load(url)
-            .into(object : CustomTarget<Bitmap>() {
-                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    imageBitmap = resource
-                    Log.e("FView", "onResourceReady: $resource")
-                    requestLayout()
-                    // Vẽ lại toàn bộ view hoặc phần cụ thể
-                    // Nếu bạn sử dụng custom view, cần cách để yêu cầu vẽ lại
-                    // Ví dụ: invalidate() nếu bạn đang sử dụng View
-                    // Hoặc thông báo cho hệ thống của bạn biết rằng cần phải vẽ lại phần canvas chứa ảnh
-                    // parent.invalidate() hoặc tương tự nếu có parent view
-                }
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val x = event.x
+        val y = event.y
+        if (props.clickAction != null) {
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                if (checkClick(x, y)) {
+                    animateBackgroundColor(
+                        Color.parseColor(props.background?.color ?: "#FFFFFF"),
+                        Color.LTGRAY
+                    )
 
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    // Handle the case when image loading is cleared
                 }
-            })
+                customViewGroup?.invalidate()
+            }
+            if (event.action == MotionEvent.ACTION_UP) {
+                if (checkClick(x, y)) {
+                    animateBackgroundColor(
+                        Color.LTGRAY,
+                        Color.parseColor(props.background?.color ?: "#FFFFFF")
+                    )
+
+                }
+            }
+        }
+        children.forEach {
+            it.onTouchEvent(event)
+        }
+
+        return true
+    }
+
+    private fun checkClick(x: Float, y: Float): Boolean {
+        if (x >= leftView && x <= leftView + measureWidth && y >= topView && y <= topView + measureHeight) {
+            return true
+        }
+        return false
+    }
+
+    private fun init() {
+        measureHeight = 0;
+        measureWidth = 0;
+        if (pendingViews == null) {
+            pendingViews = mutableMapOf()
+        }
+
+        drawableComponent = when (props.drawable?.type) {
+            TypeConfig.Text -> {
+                TextDrawable()
+            }
+
+            TypeConfig.Image -> {
+                ImageDrawable()
+            }
+
+            TypeConfig.Button -> {
+                ButtonDrawable(context!!)
+            }
+
+            else -> {
+                null
+            }
+        }
+        layoutStrategy = when (props.layoutType) {
+            LayoutType.Continues -> {
+                when (props.orientation) {
+                    OrientationConfig.Vertical -> {
+                        VerticalLayoutStrategy()
+                    }
+
+                    OrientationConfig.Horizontal -> {
+                        HorizontalLayoutStrategy()
+                    }
+                }
+            }
+
+            LayoutType.Stack -> {
+                StackLayoutStrategy()
+            }
+
+        }
+
+        if (props.drawable?.type == TypeConfig.Image) {
+            (drawableComponent as ImageDrawable).loadImageFromUrl(
+                context!!,
+                this,
+                props.drawable.data
+            ) {
+                customViewGroup?.requestLayout()
+                customViewGroup?.invalidate()
+            }
+        }
+    }
+
+    override fun setCustomViewGroup(customViewGroup: CustomViewGroup2, context: Context) {
+       if(this.context == null) {
+           this.context = context
+           this.customViewGroup = customViewGroup
+           init()
+       }
     }
 }
