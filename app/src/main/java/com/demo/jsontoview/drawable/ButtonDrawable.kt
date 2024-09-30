@@ -3,51 +3,77 @@ package com.demo.jsontoview.drawable
 
 import Props
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.text.BoringLayout
 import android.text.Layout
-import android.text.StaticLayout
 import android.text.TextPaint
 import android.util.Log
 import android.view.Gravity
-import android.view.MotionEvent
-import android.view.View
-import com.demo.jsontoview.FTree
+import com.demo.jsontoview.FView
 import com.demo.jsontoview.Parser
-import com.demo.jsontoview.R
 import com.demo.jsontoview.models.DrawableComponent
 
 class ButtonDrawable(private val context: Context) : DrawableComponent {
+    override var width: Int = 0
+    override var height: Int = 0
+
+
     private var textPaint: TextPaint? = null
     private var backgroundPaint: Paint? = null
-    private var backgroundPaintPressed: Paint? = null
     private var borderPaint: Paint? = null
 
     private var iconDrawable: Drawable? = null // Thay vì sử dụng Bitmap, chúng ta dùng Drawable
-    private var isPressed: Boolean = false
     private var boringLayout: BoringLayout? = null
     private var leftPosition: Int = 0
     private var topPosition: Int = 0
+    private var colorButton: String? = null
+
+    fun setColor(color: String) {
+        if (colorButton == color) {
+            colorButton = null
+            return
+        }
+        this.colorButton = color
+//        textPaint?.color = Color.parseColor(color)
+//        iconDrawable.let { drawable ->
+//            drawable?.setTint(Color.parseColor(color))
+//        }
+    }
 
 
     override fun measure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
-        fView: FTree,
-        props: Props,
-    ): Pair<Int, Int> {
+        fView: FView,
+    ) {
+        val props = fView.props
 
-        // Khởi tạo Paint cho văn bản
         textPaint = TextPaint().apply {
-            textSize = (props.drawable?.props?.textSize ?: 24).toFloat()
-            color = Color.parseColor(props.drawable?.props?.textColor)
+            textSize = (Parser.parseDp(props.drawable?.props?.textSize ?: 24)).toFloat()
+            color = Color.parseColor(colorButton ?: props.drawable?.props?.textColor)
             isAntiAlias = true
+            typeface = props.drawable?.props?.textType?.let { font ->
+                when (font) {
+                    TextType.Bold -> android.graphics.Typeface.DEFAULT_BOLD
+                    TextType.Italic -> android.graphics.Typeface.create(
+                        Typeface.DEFAULT,
+                        Typeface.ITALIC
+                    )
+
+                    TextType.BoldItalic -> android.graphics.Typeface.create(
+                        Typeface.DEFAULT,
+                        Typeface.BOLD_ITALIC
+                    )
+
+                    else -> android.graphics.Typeface.DEFAULT
+                }
+            }
         }
+
         if (props.drawable?.props?.icon != null) {
             val resourceName = props.drawable.props.icon
             val resourceId =
@@ -56,14 +82,14 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
         }
 
         // Khởi tạo Paint cho viền (nếu có trong props)
-        props.drawable?.props?.border?.let {
-            borderPaint = Paint().apply {
-                color = Color.parseColor(it.color)
-                style = Paint.Style.STROKE
-                strokeWidth = it.width.toFloat()
-                isAntiAlias = true
-            }
-        }
+//        props.drawable?.props?.border?.let {
+//            borderPaint = Paint().apply {
+//                color = Color.parseColor(it.color)
+//                style = Paint.Style.STROKE
+//                strokeWidth = it.width.toFloat()
+//                isAntiAlias = true
+//            }
+//        }
 
         // Đo kích thước văn bản
         val metrics = BoringLayout.isBoring(props.drawable?.data, textPaint)
@@ -85,21 +111,20 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
         val iconHeight = (iconDrawable?.intrinsicHeight ?: 0)
 
         // Tính toán kích thước tổng của nút
-        val width =
+        width =
             (boringLayout?.width
-                ?: 0) + props.padding.left + props.padding.right + iconWidth + (props.drawable?.props?.gap
-                ?: 0) + (props.drawable?.props?.border?.width ?: 0) * 3
-        val height = maxOf(
-            (boringLayout?.height ?: 0) + props.padding.top + props.padding.bottom,
-            iconHeight + props.padding.top + props.padding.bottom
-        ) + (props.drawable?.props?.border?.width ?: 0) * 3
+                ?: 0) + iconWidth + (props.drawable?.props?.gap
+                ?: 0)
+        height = maxOf(
+            (boringLayout?.height ?: 0),
+            iconHeight
+        )
 
-        return Pair(width, height)
     }
 
-    override fun draw(canvas: Canvas, width: Int, height: Int, props: Props) {
+    override fun draw(canvas: Canvas, props: Props) {
         // Vẽ nền của nút tùy thuộc vào trạng thái nhấn
-        val paintToUse = if (isPressed) backgroundPaintPressed else backgroundPaint
+        val paintToUse = backgroundPaint
         paintToUse?.let {
             canvas.drawRect(
                 0F,
@@ -114,7 +139,12 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
         iconDrawable?.let { drawable: Drawable ->
             val iconLeft = leftPosition + props.padding.left
             val iconTop = topPosition + props.padding.top
-
+            if (colorButton != null) {
+                textPaint?.color = Color.parseColor(colorButton)
+                drawable.setTint(Color.parseColor(colorButton))
+            }else{
+                colorButton = props.drawable?.props?.textColor
+            }
             drawable.setBounds(
                 iconLeft,
                 iconTop,
@@ -132,7 +162,7 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
             canvas.save()
             canvas.translate(
                 leftText.toFloat(),
-                topPosition.toFloat() + props.padding.top
+                topPosition.toFloat()
             )
             boringLayout?.draw(canvas)
             canvas.restore()
@@ -150,15 +180,14 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
         }
     }
 
-    override fun layout(left: Int, top: Int, fView: FTree) {
+    override fun layout(left: Int, top: Int, fView: FView) {
+        val totalWidth =
+            fView.measureWidth - fView.props.margin.left - fView.props.margin.right - fView.props.padding.left - fView.props.padding.right
+        val totalHeight =
+            fView.measureHeight - fView.props.margin.top - fView.props.margin.bottom - fView.props.padding.top - fView.props.padding.bottom
 
-
-        val totalWidth = fView.totalWidth
-        val totalHeight = fView.totalHeight
-
-        val widthDrawable = fView.internalWidth
-        val heightDrawable = fView.internalHeight
-
+        val widthDrawable = this.width
+        val heightDrawable = this.height
 
         val gravity = Parser.parseGravityForView(fView.props.gravity)
 
@@ -177,12 +206,12 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
             }
 
             Gravity.END -> {
-                leftPosition = totalWidth - fView.totalWidth
+                leftPosition = totalWidth - fView.measureWidth
                 topPosition = (totalHeight - heightDrawable) / 2
             }
 
             Gravity.BOTTOM -> {
-                topPosition = totalHeight - fView.totalHeight
+                topPosition = totalHeight - fView.measureHeight
                 leftPosition = (totalWidth - widthDrawable) / 2
 
             }
@@ -191,10 +220,10 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
                 leftPosition = 0
             }
         }
+        Log.e("ButtonDrawable", "layout111: $leftPosition, $topPosition")
 
 
     }
-
 
 
 }

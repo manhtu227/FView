@@ -1,13 +1,15 @@
-package com.demo.jsontoview.helpers
+package com.demo.jsontoview.handler
 
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.graphics.Color
 import android.view.MotionEvent
-import androidx.lifecycle.Lifecycle
 import com.demo.jsontoview.FView
 
-class TouchEventHandler(private val event: MotionEvent, private val fView: FView) {
+class TouchEventHandler(
+    private val event: MotionEvent,
+    private val fView: FView
+) {
 
     fun onTouchEvent(): FView? {
         val x = event.x
@@ -17,7 +19,7 @@ class TouchEventHandler(private val event: MotionEvent, private val fView: FView
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     animateBackgroundColor(
-                        Color.parseColor(props.background?.color ?: "#FFFFFF"),
+                        Color.parseColor(props.background?.color ?: "#1A1A1A"),
                         Color.LTGRAY
                     )
                 }
@@ -25,7 +27,7 @@ class TouchEventHandler(private val event: MotionEvent, private val fView: FView
                 MotionEvent.ACTION_UP -> {
                     animateBackgroundColor(
                         Color.LTGRAY,
-                        Color.parseColor(props.background?.color ?: "#FFFFFF")
+                        Color.parseColor(props.background?.color ?: "#1A1A1A")
                     )
                     return fView
                 }
@@ -33,7 +35,7 @@ class TouchEventHandler(private val event: MotionEvent, private val fView: FView
                 else -> {
                     animateBackgroundColor(
                         Color.LTGRAY,
-                        Color.parseColor(props.background?.color ?: "#FFFFFF")
+                        Color.parseColor(props.background?.color ?: "#1A1A1A")
                     )
                 }
             }
@@ -56,8 +58,8 @@ class TouchEventHandler(private val event: MotionEvent, private val fView: FView
 
 
     private fun checkClick(x: Float, y: Float): Boolean {
-        val leftView = fView.leftView
-        val topView = fView.topView
+        val leftView = fView.leftTouch
+        val topView = fView.topTouch
         val measureWidth = fView.measureWidth
         val measureHeight = fView.measureHeight
         if (x >= leftView && x <= leftView + measureWidth && y >= topView && y <= topView + measureHeight) {

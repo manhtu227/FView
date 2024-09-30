@@ -13,13 +13,13 @@ import android.graphics.Shader
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
-import com.demo.jsontoview.FTree
+import com.demo.jsontoview.FView
 
 interface ImageStrategy {
     fun measure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
-        fView: FTree,
+        fView: FView,
         props: Props,
     ): Pair<Int, Int>
 
@@ -31,7 +31,7 @@ class SimpleImageStrategy(private var imageBitmap: Bitmap) : ImageStrategy {
     override fun measure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
-        fView: FTree,
+        fView: FView,
         props: Props,
     ): Pair<Int, Int> {
         var width = 0
@@ -161,7 +161,7 @@ class TwoImageStrategy(private var arrayImage: MutableList<Bitmap?>) : ImageStra
     override fun measure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
-        fView: FTree,
+        fView: FView,
         props: Props,
     ): Pair<Int, Int> {
         var width = 0
@@ -230,7 +230,7 @@ class ThreeImageStrategy(private val arrayImage: MutableList<Bitmap?>) : ImageSt
     override fun measure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
-        fView: FTree,
+        fView: FView,
         props: Props,
     ): Pair<Int, Int> {
         var width = 0
@@ -332,7 +332,7 @@ class FourImageStrategy(private val arrayImage: MutableList<Bitmap?>) : ImageStr
     override fun measure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
-        fView: FTree,
+        fView: FView,
         props: Props,
     ): Pair<Int, Int> {
         var width = 0
@@ -452,7 +452,7 @@ class FiveImageStrategy(private val arrayImage: MutableList<Bitmap?>) : ImageStr
     override fun measure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
-        fView: FTree,
+        fView: FView,
         props: Props,
     ): Pair<Int, Int> {
         var width = 0

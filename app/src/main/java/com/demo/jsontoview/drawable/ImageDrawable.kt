@@ -5,12 +5,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapShader
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
-import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
@@ -18,33 +14,56 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
-import com.demo.jsontoview.FTree
+import com.bumptech.glide.signature.ObjectKey
+import com.demo.jsontoview.FView
+import com.demo.jsontoview.Parser
+import com.demo.jsontoview.helpers.HelperDrawable
 import com.demo.jsontoview.models.DrawableComponent
 import kotlin.math.max
 import kotlin.math.min
 
 class ImageDrawable : DrawableComponent {
+
+    override var width: Int = 0
+
+    override var height: Int = 0
+
     private var imageBitmap: Bitmap? = null
+//    private var widthImage: Int? = null
+//    private var heightImage: Int? = null
+
     private var paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    fun loadImageFromUrl(context: Context, fView: FTree, url: String, onImageReady: () -> Unit) {
-        imageBitmap = fView.imageBitmap
-        if (imageBitmap != null) {
-            paint = fView.paint
-            Log.e("ImageDrawable", "loadImageFromUrl: $imageBitmap")
-            fView.customViewGroup?.invalidate()
-            return
-        }
-        Glide.with(context)
+    fun loadImageFromUrl(fView: FView, url: String) {
+
+        Glide.with(fView.customViewGroup!!.context!!)
             .asBitmap()
             .load(url)
+            .signature(ObjectKey(url))
             .into(object : CustomTarget<Bitmap>() {
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    imageBitmap = resource
-                    fView.imageBitmap = imageBitmap
-                    onImageReady()
+                    if (imageBitmap == null) {
+                        imageBitmap = resource
+//                        fView.cache.clearAll()
+//                        fView.mParent?.cache?.clearAll()
+//                        widthImage = resource.width
+//                        heightImage = resource.height
+
+                        fView.customViewGroup?.requestLayout()
+                        fView.customViewGroup?.invalidate()
+                        return
+                    }
+//                    imageBitmap = resource
+//                    widthImage = resource.width
+//                    heightImage = resource.height
+//                    fView.customViewGroup?.requestLayout()
+                    fView.customViewGroup?.invalidate()
                 }
 
                 override fun onLoadCleared(placeholder: Drawable?) {
@@ -55,97 +74,108 @@ class ImageDrawable : DrawableComponent {
     override fun measure(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
-        fView: FTree,
-        props: Props,
-    ): Pair<Int, Int> {
-        var width = 0
-        var height = 0
+        fView: FView,
+    ) {
+        val props = fView.props
 
-        val heightMode = View.MeasureSpec.getMode(heightMeasureSpec)
+        var widthExpect = imageBitmap?.width ?: 0
+        var heightExpect = imageBitmap?.height ?: 0
 
-        if (heightMode == View.MeasureSpec.EXACTLY) {
-            height = View.MeasureSpec.getSize(heightMeasureSpec)
-        }
+        val layoutWidth = Parser.parseDimension(props.width)
+        val layoutHeight = Parser.parseDimension(props.height)
+        var scaleFactor = 1
 
-        if (props.width.unit == UnitConfig.Percent) {
-            val widthParent =
-                (fView.mParent?.widthSize
-                    ?: 0) - (fView.mParent?.props?.margin?.left
-                    ?: 0) - (fView.mParent?.props?.margin?.right
-                    ?: 0) - (fView.mParent?.props?.padding?.left
-                    ?: 0) - (fView.mParent?.props?.padding?.right
-                    ?: 0) - props.padding.left - props.padding.right -(fView.mParent?.props?.gap
-                    ?: 0)
+        val helperWidth = HelperDrawable(props, widthMeasureSpec)
 
-            imageBitmap?.let {
-                val desiredWidth = (widthParent * props.width.value / 100)
-                val scaleFactor = desiredWidth / (it.width ?: 1).toFloat()
-                val desiredHeight =
-                    (when (props.height.value) {
-                        ViewGroup.LayoutParams.MATCH_PARENT -> {
-                            if (heightMode == View.MeasureSpec.EXACTLY) {
-                                height - props.padding.top - props.padding.bottom
-                            } else {
-                                (it.height ?: 0)
-                            }
-                        }
-
-                        ViewGroup.LayoutParams.WRAP_CONTENT -> {
-                            (it.height ?: 0)
-                        }
-
-                        else -> {
-                            it.height * scaleFactor
-                        }
-                    }).toInt()
-                width = desiredWidth + props.padding.left + props.padding.right
-                height = desiredHeight + props.padding.top + props.padding.bottom
+        when (layoutWidth) {
+            ViewGroup.LayoutParams.MATCH_PARENT -> {
+                helperWidth.matchParent(widthExpect)
+                widthExpect.let {
+                    scaleFactor = helperWidth.value / (if (widthExpect == 0) 1 else widthExpect!!)
+                }
+                width = helperWidth.value
             }
-        } else if (props.width.value == ViewGroup.LayoutParams.MATCH_PARENT) {
-            imageBitmap?.let {
-                val desiredWidth =
-                    View.MeasureSpec.getSize(widthMeasureSpec) - props.padding.left - props.padding.right - props.margin.left - props.margin.right - (fView.mParent?.props?.gap
-                        ?: 0) * ((fView.mParent?.children?.size ?: 1) - 1)
-                val scaleFactor = desiredWidth / it.width.toFloat()
-                val desiredHeight = (it.height * scaleFactor).toInt()
 
-                width = desiredWidth + props.padding.left + props.padding.right
-                height = desiredHeight + props.padding.top + props.padding.bottom
-
+            ViewGroup.LayoutParams.WRAP_CONTENT -> {
+                widthExpect?.let {
+                    helperWidth.wrapContent(widthExpect)
+                    width = helperWidth.value
+                }
             }
-        } else if (props.width.value == ViewGroup.LayoutParams.WRAP_CONTENT) {
-            width = (imageBitmap?.width ?: 0) + props.padding.left + props.padding.right
-            height = (imageBitmap?.height ?: 0) + props.padding.top + props.padding.bottom
-        } else {
-            imageBitmap?.let {
-                val desiredWidth = props.width.value
-                val scaleFactor = width / it.width.toFloat()
-                val desiredHeight = (when (props.height.value) {
-                    ViewGroup.LayoutParams.MATCH_PARENT -> {
-                        height
-                    }
 
-                    ViewGroup.LayoutParams.WRAP_CONTENT -> {
-                        (it.height ?: 0)
-                    }
-
-                    else -> {
-                        props.height.value
-                    }
-                }).toInt()
-
-                width = desiredWidth + props.padding.left + props.padding.right
-                height = desiredHeight + props.padding.top + props.padding.bottom
+            else -> {
+                if (props.width.unit == UnitConfig.Percent) {
+                    helperWidth.unitPercent();
+                    val widthParent =
+                        helperWidth.value
+                    width = (widthParent * props.width.value / 100)
+                } else {
+                    width = layoutWidth
+                }
             }
         }
 
+        val helperHeight = HelperDrawable(props, heightMeasureSpec)
+        when (layoutHeight) {
+            ViewGroup.LayoutParams.MATCH_PARENT -> {
+                helperHeight.matchParent(heightExpect)
+                height = helperHeight.value * scaleFactor
+//                height = helperHeight.value
+            }
+
+            ViewGroup.LayoutParams.WRAP_CONTENT -> {
+                helperHeight.wrapContent(heightExpect)
+                height = helperHeight.value
+            }
+
+            else -> {
+                if (props.height.unit == UnitConfig.Percent) {
+                    helperHeight.unitPercent();
+                    val heightParent = helperHeight.value
+                    height = (heightParent * props.height.value / 100)
+                } else {
+                    height = layoutHeight
+                }
+            }
+        }
+
+        // scale type
+        scaleTypeLayout(props)
+
+
+    }
+
+
+    override fun draw(canvas: Canvas, props: Props) {
+        canvas.save()
+        imageBitmap?.let {
+            var radius = props.drawable?.props?.radius ?: 0
+
+            if (radius == 0)
+                radius = 10
+            val rect = RectF(
+                0F,
+                0F,
+                (width).toFloat(),
+                (height).toFloat()
+            )
+            canvas.drawRoundRect(rect, radius.toFloat(), radius.toFloat(), paint)
+        }
+        canvas.restore()
+    }
+
+    override fun layout(left: Int, top: Int, fView: FView) {
+
+    }
+
+    private fun scaleTypeLayout(props: Props) {
         imageBitmap?.let { bitmap ->
-            val bitmapWidth = bitmap.width.toFloat()
-            val bitmapHeight = bitmap.height.toFloat()
+            val bitmapWidth = bitmap.width!!.toFloat()
+            val bitmapHeight = bitmap.height!!.toFloat()
 
-            val viewWidth = (width - props.padding.left - props.padding.right).toFloat()
-            val viewHeight = (height - props.padding.top - props.padding.bottom).toFloat()
-
+            val viewWidth = (width).toFloat()
+            val viewHeight = (height).toFloat()
+            val matrix = Matrix()
             // Tùy chỉnh scaleType mà không thay đổi kích thước tổng thể của view
             when (props.drawable?.props?.scaleType) {
                 ScaleType.FitXY -> {
@@ -200,7 +230,6 @@ class ImageDrawable : DrawableComponent {
                 }
 
                 ScaleType.Center -> {
-                    val matrix = Matrix()
                     val dx = (viewWidth - bitmapWidth) / 2
                     val dy = (viewHeight - bitmapHeight) / 2
                     matrix.postTranslate(dx, dy)
@@ -230,31 +259,5 @@ class ImageDrawable : DrawableComponent {
                 }
             }
         }
-        fView.paint = paint
-        return Pair(width, height)
-    }
-
-
-    override fun draw(canvas: Canvas, width: Int, height: Int, props: Props) {
-        canvas.save()
-        imageBitmap?.let { bitmap ->
-            var radius = props.drawable?.props?.radius ?: 0
-
-            if (radius == 0)
-                radius = 10
-            val rect = RectF(
-                0F,
-                0F,
-                (width).toFloat(),
-                (height).toFloat()
-            )
-            canvas.drawRoundRect(rect, radius.toFloat(), radius.toFloat(), paint)
-        }
-        canvas.restore()
-    }
-
-    override fun layout(left: Int, top: Int, fView: FTree) {
-//        TODO("Not yet implemented")
     }
 }
-

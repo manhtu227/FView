@@ -3,17 +3,19 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.jsontoview.CustomViewGroup
 import com.demo.jsontoview.CustomViewGroup2
-import com.demo.jsontoview.FTree
+import com.demo.jsontoview.FView
+import com.demo.jsontoview.Parser
 
-class MyCustomAdapter(private val children: List<FTree>) :
+class MyCustomAdapter(private val props: Props, private val children: List<FView>) :
     RecyclerView.Adapter<MyCustomAdapter.ViewHolder>() {
 
     inner class ViewHolder(val view: android.view.View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        Log.e("MyCustomAdapter", "onCreateViewHolder $viewType")
+        if (props.test == "reTest")
+            Log.e("MyCustomAdapter", "saocungdcdsdasdas ${children.size} ")
+
         val context = parent.context
 
         return when (viewType) {
@@ -21,10 +23,15 @@ class MyCustomAdapter(private val children: List<FTree>) :
                 val recyclerView = RecyclerView(context)
                 ViewHolder(recyclerView)
             }
+
             ViewTypeConfig.ViewGroup.type -> {
                 val viewGroup = CustomViewGroup2(context)
+                if (props.test == "reTest")
+                    Log.e("MyCustomAdapter", "saocungdcnha21212 ${viewGroup}")
+
                 ViewHolder(viewGroup)
             }
+
             else -> {
                 ViewHolder(TextView(context))
             }
@@ -35,12 +42,21 @@ class MyCustomAdapter(private val children: List<FTree>) :
         val child = children[position]
         val view = holder.view
 
+
+
         when (view) {
             is CustomViewGroup2 -> {
+                if (props.test == "reTest")
+                    Log.e("MyCustomAdapter", "saocungdcnha ${view} ${position} $child")
+
                 view.apply {
-                    layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                    layoutParams = ViewGroup.LayoutParams(
+                        Parser.parseDimension(child.props.width),
+                        Parser.parseDimension(child.props.height)
+                    )
                 }.setFViewTree(child)
             }
+
             is RecyclerView -> {
                 view.layoutManager = if (child.props.orientation == OrientationConfig.Vertical) {
                     LinearLayoutManager(view.context, LinearLayoutManager.VERTICAL, false)
@@ -55,10 +71,11 @@ class MyCustomAdapter(private val children: List<FTree>) :
                         child.props.padding.bottom
                     )
                 }
-                view.adapter = MyCustomAdapter(child.children)
+                view.adapter = MyCustomAdapter(child.props, child.children)
 
 
             }
+
             else -> {
 
             }
@@ -71,7 +88,8 @@ class MyCustomAdapter(private val children: List<FTree>) :
     }
 
     override fun getItemViewType(position: Int): Int {
-        Log.e("MyCustomAdapter", "getItemViewType ${children.size} $position  ${children[position].viewType}")
+        if (props.test == "reTest")
+            Log.e("MyCustomAdapter", "saocungdcdsddavcbasdas ${position} ${children[position].viewType.type} ${children[position].props.test} ")
         return children[position].viewType.type
     }
 }

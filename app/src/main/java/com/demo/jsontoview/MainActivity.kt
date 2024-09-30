@@ -8,7 +8,6 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -39,22 +38,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        fun createViewFromLayout(context: Context, layout: FTree): android.view.View {
+        fun createViewFromLayout(context: Context, layout: FView): android.view.View {
             return when (layout.viewType) {
                 ViewTypeConfig.ViewGroup -> handleViewGroup(context, layout)
                 ViewTypeConfig.RecyclerView -> handleRecyclerView(context, layout)
+                ViewTypeConfig.InputText -> TODO()
             }
         }
 
 
-        private fun handleViewGroup(context: Context, layout: FTree): android.view.View {
+        private fun handleViewGroup(context: Context, layout: FView): android.view.View {
             val viewGroup = CustomViewGroup2(context).apply {
                 setFViewTree(layout)
             }
             return viewGroup
         }
 
-        private fun handleRecyclerView(context: Context, layout: FTree): android.view.View {
+        private fun handleRecyclerView(context: Context, layout: FView): android.view.View {
             val recyclerView = RecyclerView(context).apply {
                 layoutManager = if (layout.props.orientation == OrientationConfig.Vertical) {
                     LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
@@ -75,9 +75,7 @@ class MainActivity : AppCompatActivity() {
                 if (layout.props.background != null)
                     setBackgroundColor(Color.parseColor(layout.props.background.color))
 
-
-
-                adapter = MyCustomAdapter(layout.children)
+                adapter = MyCustomAdapter(layout.props,layout.children)
 
                 // Add divider item decoration
                 val dividerItemDecoration = DividerItemDecoration(
@@ -86,8 +84,8 @@ class MainActivity : AppCompatActivity() {
 
                 // Custom màu và độ dày cho divider
                 val drawable = GradientDrawable().apply {
-                    setColor(Color.parseColor("#bcc0c4")) // Màu xám
-                    setSize(30, 30)        // Chiều rộng 1px, chiều cao 5px
+                    setColor(Color.parseColor("#5B5F59")) // Màu xám
+                    setSize(1, 3)        // Chiều rộng 1px, chiều cao 5px
                 }
                 dividerItemDecoration.setDrawable(drawable)
 

@@ -8,9 +8,9 @@ import android.view.ViewGroup
 import com.google.gson.Gson
 
 object Parser {
-    fun parseJsonToViewData(json: String): FTree {
+    fun parseJsonToViewData(json: String): FView {
         val gson = Gson()
-        return gson.fromJson(json, FTree::class.java)
+        return gson.fromJson(json, FView::class.java)
     }
 
     fun parseDimension(dimension: DimensionConfig): Int {
@@ -23,6 +23,10 @@ object Parser {
                 UnitConfig.Percent -> if (dimension.value > 100) 100 else dimension.value
             }
         }
+    }
+
+    fun parseDp(value: Int): Int {
+        return (value * Resources.getSystem().displayMetrics.density).toInt()
     }
 
     fun parseGravityForView(gravitySet: Set<GravityConfig>?): Int? {

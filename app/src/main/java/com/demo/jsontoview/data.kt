@@ -1,3 +1,6 @@
+import android.util.Log
+import com.demo.jsontoview.FView
+import com.demo.jsontoview.Parser
 import com.google.gson.annotations.SerializedName
 
 enum class TextType(val type: Int) {
@@ -19,7 +22,10 @@ enum class ViewTypeConfig(val type: Int) {
     RecyclerView(1),
 
     @SerializedName("2")
-    ViewGroup(2)
+    ViewGroup(2),
+
+    @SerializedName("3")
+    InputText(3)
 }
 
 enum class ScaleType(val value: Int) {
@@ -73,6 +79,26 @@ enum class GravityConfig(val value: Int) {
     Center(4)
 }
 
+enum class JustifyContentConfig(val value: Int) {
+    @SerializedName("0")
+    Start(0),
+
+    @SerializedName("1")
+    Center(1),
+
+    @SerializedName("2")
+    End(2),
+
+    @SerializedName("3")
+    SpaceBetween(3),
+
+    @SerializedName("4")
+    SpaceAround(4),
+
+    @SerializedName("5")
+    SpaceEvenly(5)
+}
+
 enum class OrientationConfig(val value: Int) {
     @SerializedName("0")
     Horizontal(0),
@@ -100,7 +126,7 @@ enum class TypeConfig(val type: Int) {
     Button(3),
 
     @SerializedName("4")
-    ArrayImage(4),
+    Icon(4),
 
     @SerializedName("5")
     Avatar(5)
@@ -136,68 +162,61 @@ data class BorderConfig(
 )
 
 data class PropsDrawable(
-    @SerializedName("textSize") val textSize: Int,
-    @SerializedName("textColor") val textColor: String,
-    @SerializedName("textType") val textType: TextType,
-    @SerializedName("background") val background: BackgroundConfig?,
-    @SerializedName("scaleType") val scaleType: ScaleType,
-    @SerializedName("padding") val padding: PaddingConfig,
-    @SerializedName("margin") val margin: PaddingConfig,
-    @SerializedName("gap") val gap: Int,
-    @SerializedName("icon") val icon: String,
-    @SerializedName("radius") val radius: Int?,
-    @SerializedName("imageSize") val imageSize: Int?,
-    @SerializedName("border") val border: BorderConfig?
+    @SerializedName("textSize") val textSize: Int? = null,
+    @SerializedName("textMaxLines") val textMaxLines: Int? = null,
+    @SerializedName("fontStyle") val fontStyle: Int? = null,
+    @SerializedName("letterSpacing") val letterSpacing: Int? = null,
+    @SerializedName("lineHeight") val lineHeight: Int? = null,
+    @SerializedName("textAlign") val textAlign: Int? = null,
+    @SerializedName("textColor") val textColor: String? = null,
+    @SerializedName("textType") val textType: TextType? = null,
+    @SerializedName("background") val background: BackgroundConfig? = null,
+    @SerializedName("scaleType") val scaleType: ScaleType? = null,
+    @SerializedName("gap") var gap: Int? = null,
+    @SerializedName("icon") val icon: String? = null,
+    @SerializedName("radius") val radius: Int? = null,
+    @SerializedName("imageSize") val imageSize: Int? = null,
+    @SerializedName("border") val border: BorderConfig? = null,
 )
-
-sealed class DrawableData {
-    data class Data(val data: String) : DrawableData()
-    data class ArrayImage(val urls: List<String>) : DrawableData()
-}
 
 
 data class DrawableConfig(
     @SerializedName("type") val type: TypeConfig,
-    @SerializedName("data") val data: String,
-    @SerializedName("dataList") val dataList: List<String>,
+    @SerializedName("data") var data: String,
     @SerializedName("props") val props: PropsDrawable,
 )
 
-enum class TypeClick(val type: Int) {
+enum class TypeAction(val type: Int) {
     @SerializedName("0")
-    onClick(0),
-
-    @SerializedName("1")
-    OnLongPress(1),
-
-    @SerializedName("2")
-    OnDoubleClick(2)
+    ShowComment(0),
 }
 
 data class ClickAction(
-    @SerializedName("type") val type: TypeClick,
-    @SerializedName("data") val data: String,
+    @SerializedName("type") val type: TypeAction,
+    @SerializedName("dataFView") val dataFView: FView?,
+    @SerializedName("data") val data: String?,
 )
 
 data class Props(
-    @SerializedName("test") val test: String?,
+    @SerializedName("id") val id: String? = null,
+    @SerializedName("isComponent") val isComponent: Boolean? = null,
     @SerializedName("width") val width: DimensionConfig,
     @SerializedName("height") val height: DimensionConfig,
-    @SerializedName("background") val background: BackgroundConfig?,
-    @SerializedName("gap") val gap: Int,
-    @SerializedName("radius") val radius: Int?,
-    @SerializedName("gravity") val gravity: Set<GravityConfig>?,
-    @SerializedName("layoutGravity") val layoutGravity: Set<GravityConfig>?,
+    @SerializedName("test") val test: String? = null,
+    @SerializedName("background") val background: BackgroundConfig? = null,
+    @SerializedName("border") val border: BorderConfig? = null,
+    @SerializedName("gap") var gap: Int? = null,
+    @SerializedName("radius") val radius: Int? = null,
+    @SerializedName("gravity") val gravity: Set<GravityConfig>? = null,
+    @SerializedName("layoutGravity") val layoutGravity: Set<GravityConfig>? = null,
     @SerializedName("orientation") val orientation: OrientationConfig,
-    @SerializedName("padding") val padding: PaddingConfig,
-    @SerializedName("margin") val margin: PaddingConfig,
+    @SerializedName("padding") val padding: PaddingConfig = PaddingConfig(0, 0, 0, 0),
+    @SerializedName("margin") val margin: PaddingConfig = PaddingConfig(0, 0, 0, 0),
     @SerializedName("layoutType") val layoutType: LayoutType,
-    @SerializedName("drawable") val drawable: DrawableConfig?,
-    @SerializedName("clickAction") val clickAction: List<ClickAction>?,
+    @SerializedName("drawable") val drawable: DrawableConfig? = null,
+    @SerializedName("clickAction") val clickAction: List<ClickAction>? = null,
+    @SerializedName("isClick") val isClick: Boolean? = null,
+    @SerializedName("hintText") val hintText: String? = null,
+    @SerializedName("justifyContent") val justifyContent: JustifyContentConfig? = null,
 )
 
-//data class FView(
-//    @SerializedName("viewType") val viewType: ViewTypeConfig,
-//    @SerializedName("props") val props: Props,
-//    @SerializedName("children") val children: List<FView> = emptyList()
-//)
