@@ -16,6 +16,10 @@ class PropsHandler {
         val widthCurrent = tree.measureWidth
         val totalHeight = tree.measureHeight
 
+        if(mParent==null){
+            return
+        }
+
         val layoutGravity = Parser.parseGravityForView(props.layoutGravity)
 
         val parentWidth = (mParent?.measureWidth ?: 0) - (mParent?.props?.margin?.left

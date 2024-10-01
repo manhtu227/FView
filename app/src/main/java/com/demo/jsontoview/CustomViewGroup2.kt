@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import com.demo.jsontoview.handler.ViewEventManager
+import android.view.ViewTreeObserver
 
 class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs) {
 
@@ -18,21 +19,39 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
         return rootFView
     }
 
+    var startTime: Long = 0  // Thời gian bắt đầu
+
     init {
         setWillNotDraw(false)
+//        startTime = System.currentTimeMillis()  // Bắt đầu đo thời gian
+        // Đăng ký lắng nghe sự kiện khi View được vẽ xong
+        Log.d("CustomCenterLayout", "Start ${rootFView?.props?.id} ${startTime} ms")
+        viewTreeObserver.addOnGlobalLayoutListener {
+            // Thời điểm layout và draw hoàn tất
+            val endTime = System.currentTimeMillis()
+            if (rootFView?.props?.id == "2222")
+                Log.d(
+                    "CustomCenterLayout",
+                    "Time to fully render (layout + draw): ${rootFView?.props?.id}  ${endTime - startTime} ms"
+                )
+
+            // Sau khi log xong có thể xóa listener nếu không cần dùng tiếp
+//            viewTreeObserver.removeOnGlobalLayoutListener(this)
+        }
     }
 
     fun setFViewTree(fView: FView) {
-//        if (fView.props.test == "7") {
-//            Log.e("CustomViewGroup2", "setFViewTree: ${rootFView} ${fView.props}")
-//        }
-        if(rootFView != null) {
+        if (fView.props.id == "2222") {
+            startTime = System.currentTimeMillis()
+
+        }
+        if (rootFView != null) {
             pendingViews.clear()
             this.removeAllViews()
         }
 
         rootFView = fView
-        rootFView!!.customViewGroup=this
+        rootFView!!.customViewGroup = this
 
 
     }
@@ -77,6 +96,14 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
         super.onDraw(canvas)
 
         rootFView?.draw(canvas)
+
+        if (rootFView?.props?.id == "2222") {
+            val endTime = System.currentTimeMillis()
+            Log.d(
+                "CustomCenterLayout",
+                "vao day di): ${rootFView?.props?.id}  ${endTime - startTime} ms"
+            )
+        }
     }
 
 }

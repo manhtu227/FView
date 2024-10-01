@@ -13,9 +13,6 @@ class MyCustomAdapter(private val props: Props, private val children: List<FView
     inner class ViewHolder(val view: android.view.View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        if (props.test == "reTest")
-            Log.e("MyCustomAdapter", "saocungdcdsdasdas ${children.size} ")
-
         val context = parent.context
 
         return when (viewType) {
@@ -26,8 +23,6 @@ class MyCustomAdapter(private val props: Props, private val children: List<FView
 
             ViewTypeConfig.ViewGroup.type -> {
                 val viewGroup = CustomViewGroup2(context)
-                if (props.test == "reTest")
-                    Log.e("MyCustomAdapter", "saocungdcnha21212 ${viewGroup}")
 
                 ViewHolder(viewGroup)
             }
@@ -46,8 +41,6 @@ class MyCustomAdapter(private val props: Props, private val children: List<FView
 
         when (view) {
             is CustomViewGroup2 -> {
-                if (props.test == "reTest")
-                    Log.e("MyCustomAdapter", "saocungdcnha ${view} ${position} $child")
 
                 view.apply {
                     layoutParams = ViewGroup.LayoutParams(
@@ -88,8 +81,6 @@ class MyCustomAdapter(private val props: Props, private val children: List<FView
     }
 
     override fun getItemViewType(position: Int): Int {
-        if (props.test == "reTest")
-            Log.e("MyCustomAdapter", "saocungdcdsddavcbasdas ${position} ${children[position].viewType.type} ${children[position].props.test} ")
-        return children[position].viewType.type
+         return children[position].viewType.type
     }
 }

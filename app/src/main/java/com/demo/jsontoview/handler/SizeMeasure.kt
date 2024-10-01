@@ -1,6 +1,5 @@
 package com.demo.jsontoview.handler
 
-import android.util.Log
 import android.view.ViewGroup
 import android.view.View.MeasureSpec
 import com.demo.jsontoview.FView
@@ -103,7 +102,6 @@ class SizeMeasure {
                     heightCurrent = heightDrawable
                     heightDrawable
                 } else {
-                    Log.e("SizeMeasurer", "measureHeight: $layoutHeight")
                     heightCurrent = layoutHeight
                     layoutHeight
                 }
@@ -118,15 +116,6 @@ class SizeMeasure {
                 heightCurrent - totalGap,
                 heightMode
             )
-
-        if (props.test == "test111") {
-            Log.e(
-                "SizeMeasurer",
-                "measureHeight11: $totalGap ${measureHeight} ${heightDrawable} ${fView.mParent?.measureHeight} $heightMode $heightSize"
-            )
-        }
-
-
 
         return Pair(
             measureHeight + props.padding.top + props.padding.bottom + totalGap,

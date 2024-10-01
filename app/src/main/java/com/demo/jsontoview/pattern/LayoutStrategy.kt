@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
+import androidx.compose.ui.graphics.Color
 import com.demo.jsontoview.FView
 import com.demo.jsontoview.ViewGroupType
 import kotlin.math.max
@@ -40,8 +41,11 @@ class VerticalLayoutStrategy : LayoutStrategy {
                 currentOffset += child.measureHeight + gap
             } else {
                 view = fView.customViewGroup!!.pendingViews[child.props.id!!]
+//                if(child.props.id=="v1"){
+//                }
                 val indexView = fView.customViewGroup?.indexOfChild(view)
                 if (indexView != null && indexView != -1) {
+
                     fView.customViewGroup?.getChildAt(indexView)?.let { it ->
                         it.layout(
                             width,
@@ -73,10 +77,7 @@ class VerticalLayoutStrategy : LayoutStrategy {
         height += totalGap
 
         parent.children.forEach { child ->
-            Log.e(
-                "VerticalLayoutStrategy",
-                "measureChildren11111: ${child.viewType} ${child.props.isComponent} ${parent.measureHeight} ${height}"
-            )
+
             if (child.viewType == ViewTypeConfig.ViewGroup && child.props.isComponent != true) {
                 child.measure(widthMeasureSpec, heightMeasureSpec)
                 height += child.measureHeight

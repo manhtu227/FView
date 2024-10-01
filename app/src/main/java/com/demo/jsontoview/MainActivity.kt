@@ -12,10 +12,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+data class User(val name: String, val age: Int)
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +25,9 @@ class MainActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+
                 val jsonObject = FileUtils.readFile("view.json", this@MainActivity)
+                Log.e("createViewFromLayout", "createViewFromLayout 1ao ${Gson().fromJson(jsonObject, FView::class.java)}")
                 val rootViewData = Parser.parseJsonToViewData(jsonObject)
                 withContext(Dispatchers.Main) {
                     val rootView = createViewFromLayout(this@MainActivity, rootViewData)
@@ -31,7 +35,6 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.e("JsonToViewActivity", "Error reading JSON file", e)
             }
         }
 

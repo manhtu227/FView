@@ -220,9 +220,6 @@ class ButtonDrawable(private val context: Context) : DrawableComponent {
                 leftPosition = 0
             }
         }
-        Log.e("ButtonDrawable", "layout111: $leftPosition, $topPosition")
-
-
     }
 
 

@@ -112,7 +112,9 @@ class FView(
             height + props.margin.top + props.padding.top
         )
 
+
         propsHandler.calculateGravityPositions(this)
+
     }
 
     override fun draw(canvas: Canvas) {
@@ -125,6 +127,7 @@ class FView(
 
         leftTouch = -canvas.getClipBounds().left
         topTouch = -canvas.getClipBounds().top
+
 
         if (props.background != null || backgroundColor != null) {
             val paint = Paint().apply {
