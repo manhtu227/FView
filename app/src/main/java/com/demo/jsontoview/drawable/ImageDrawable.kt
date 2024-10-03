@@ -83,7 +83,7 @@ class ImageDrawable : DrawableComponent {
 
         val layoutWidth = Parser.parseDimension(props.width)
         val layoutHeight = Parser.parseDimension(props.height)
-        var scaleFactor = 1
+        var scaleFactor:Float = 1f
 
         val helperWidth = HelperDrawable(props, widthMeasureSpec)
 
@@ -91,8 +91,12 @@ class ImageDrawable : DrawableComponent {
             ViewGroup.LayoutParams.MATCH_PARENT -> {
                 helperWidth.matchParent(widthExpect)
                 widthExpect.let {
-                    scaleFactor = helperWidth.value / (if (widthExpect == 0) 1 else widthExpect!!)
+                    scaleFactor = helperWidth.value.toFloat() / (if (widthExpect == 0) 1 else it!!)
+                    if(fView.props.id=="be"){
+                        Log.e("ImageDrawable","widthExpect: ${helperWidth.value / 640} $widthExpect scaleFactor: $scaleFactor")
+                    }
                 }
+
                 width = helperWidth.value
             }
 
@@ -119,7 +123,7 @@ class ImageDrawable : DrawableComponent {
         when (layoutHeight) {
             ViewGroup.LayoutParams.MATCH_PARENT -> {
                 helperHeight.matchParent(heightExpect)
-                height = helperHeight.value * scaleFactor
+                height = (helperHeight.value * scaleFactor).toInt()
 //                height = helperHeight.value
             }
 

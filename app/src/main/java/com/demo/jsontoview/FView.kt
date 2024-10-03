@@ -8,6 +8,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.util.Log
 import android.view.MotionEvent
 import com.demo.jsontoview.PropsLayout.PropsHandler
 import com.demo.jsontoview.drawable.ButtonDrawable
@@ -63,7 +64,7 @@ class FView(
         return drawableComponent!!
     }
 
-    override fun measure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+    override fun measure(widthMeasureSpec: Int, heightMeasureSpec: Int,indexComponent:Int) {
 
         var childWidthMeasureSpec = widthMeasureSpec
         var childHeightMeasureSpec = heightMeasureSpec
@@ -90,31 +91,28 @@ class FView(
 
         // tính toán dựa trên layout
         layoutStrategy?.measureChildren(
-            this,
             childWidthMeasureSpec,
-            childHeightMeasureSpec
+            childHeightMeasureSpec,
+            indexComponent
         )
     }
 
-    override fun layout(left: Int, top: Int, width: Int, height: Int) {
-
-        leftPosition = left
-        topPosition = top
-
+    override fun layout(left: Int, top: Int,indexComponent:Int) {
         drawableComponent?.layout(left, top, this)
         val propsHandler = PropsHandler()
 
         propsHandler.justifyContentHandler(this)
 
         layoutStrategy?.layoutChildren(
-            this,
-            width + props.margin.left + props.padding.left,
-            height + props.margin.top + props.padding.top
+            left + props.margin.left + props.padding.left,
+            top + props.margin.top + props.padding.top,
+            indexComponent
         )
 
 
-        propsHandler.calculateGravityPositions(this)
-
+        val (l, t) = propsHandler.calculateGravityPositions(this)
+        leftPosition = left + l
+        topPosition = top + t
     }
 
     override fun draw(canvas: Canvas) {
@@ -159,13 +157,12 @@ class FView(
             props
         )
 
+        canvas.restore()
         children.forEach {
             if (it.viewType == ViewTypeConfig.ViewGroup && it.props.isComponent != true) {
                 it.draw(canvas)
             }
         }
-
-        canvas.restore()
     }
 
     override fun onTouchEvent(event: MotionEvent): FView? {
@@ -186,10 +183,21 @@ class FView(
         measureWidth = 0;
 
         for (child in children) {
-            child.customViewGroup = customViewGroup
+//            child.customViewGroup = customViewGroup
+            Log.e("FView", "init item1212: ${props.id} $this")
+            if (!(child.viewType == ViewTypeConfig.ViewGroup && child.props.isComponent != true)) {
+                val item = ViewGroupType().getView(customViewGroup!!.context!!, child)
+                Log.e("FView", "init item11: ${item}")
+                customViewGroup!!.addView(item)
+            }else{
+                child.customViewGroup=customViewGroup
+            }
         }
 
-        drawableComponent = when (props.drawable?.type) {
+
+
+
+            drawableComponent = when (props.drawable?.type) {
             TypeConfig.Text -> {
                 TextDrawable()
             }
@@ -215,17 +223,17 @@ class FView(
             LayoutType.Continues -> {
                 when (props.orientation) {
                     OrientationConfig.Vertical -> {
-                        VerticalLayoutStrategy()
+                        VerticalLayoutStrategy(this)
                     }
 
                     OrientationConfig.Horizontal -> {
-                        HorizontalLayoutStrategy()
+                        HorizontalLayoutStrategy(this)
                     }
                 }
             }
 
             LayoutType.Stack -> {
-                StackLayoutStrategy()
+                StackLayoutStrategy(this)
             }
 
         }

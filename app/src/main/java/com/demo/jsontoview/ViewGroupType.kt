@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class ViewGroupType {
-    fun viewGroup(context: Context, layout: FView): android.view.View {
+    private fun viewGroup(context: Context, layout: FView): android.view.View {
         val viewGroup = CustomViewGroup2(context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 Parser.parseDimension(layout.props.width),
@@ -26,7 +26,7 @@ class ViewGroupType {
         return viewGroup
     }
 
-    fun recyclerView(context: Context, layout: FView): android.view.View {
+    private fun recyclerView(context: Context, layout: FView): android.view.View {
         val recyclerView = RecyclerView(context).apply {
             layoutManager = if (layout.props.orientation == OrientationConfig.Vertical) {
                 LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)

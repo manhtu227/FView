@@ -10,14 +10,16 @@ class PropsHandler {
 
     fun calculateGravityPositions(
         tree: FView,
-    ) {
+    ):Pair<Int,Int> {
         val props = tree.props
         val mParent = tree.mParent
         val widthCurrent = tree.measureWidth
         val totalHeight = tree.measureHeight
+        var left=0
+        var top=0
 
         if(mParent==null){
-            return
+            return Pair(0,0)
         }
 
         val layoutGravity = Parser.parseGravityForView(props.layoutGravity)
@@ -32,21 +34,21 @@ class PropsHandler {
 
         if (mParent?.props?.layoutType == LayoutType.Continues) {
             if (mParent.props.justifyContent != null)
-                return
+                return Pair(0, 0)
             if (mParent.props.orientation == OrientationConfig.Horizontal) {
                 when (layoutGravity) {
                     Gravity.CENTER -> {
-                        tree.topPosition = ((parentHeight - totalHeight) / 2)
+                       top = ((parentHeight - totalHeight) / 2)
                     }
 
 
                     Gravity.CENTER_VERTICAL -> {
-                        tree.topPosition = (parentHeight - totalHeight) / 2
+                        top = (parentHeight - totalHeight) / 2
                     }
 
 
                     Gravity.BOTTOM -> {
-                        tree.topPosition = parentHeight - totalHeight
+                        top = parentHeight - totalHeight
 
                     }
 
@@ -54,20 +56,20 @@ class PropsHandler {
             } else if (mParent.props.orientation == OrientationConfig.Vertical) {
                 when (layoutGravity) {
                     Gravity.CENTER -> {
-                        tree.leftPosition = ((parentWidth - widthCurrent) / 2)
+                       left = ((parentWidth - widthCurrent) / 2)
                     }
 
 
                     Gravity.CENTER_HORIZONTAL -> {
-                        tree.leftPosition = (parentWidth - widthCurrent) / 2
+                        left = (parentWidth - widthCurrent) / 2
                     }
 
                     Gravity.END -> {
-                        tree.leftPosition = parentWidth - widthCurrent
+                        left = parentWidth - widthCurrent
                     }
 
                     Gravity.BOTTOM -> {
-                        tree.leftPosition = (parentWidth - widthCurrent) / 2
+                        left = (parentWidth - widthCurrent) / 2
 
                     }
 
@@ -76,32 +78,33 @@ class PropsHandler {
         } else {
             when (layoutGravity) {
                 Gravity.CENTER -> {
-                    tree.leftPosition = ((parentWidth - widthCurrent) / 2)
-                    tree.topPosition = ((parentHeight - totalHeight) / 2)
+                    left = ((parentWidth - widthCurrent) / 2)
+                    top = ((parentHeight - totalHeight) / 2)
                 }
 
 
                 Gravity.CENTER_HORIZONTAL -> {
-                    tree.leftPosition = (parentWidth - widthCurrent) / 2
+                    left = (parentWidth - widthCurrent) / 2
                 }
 
                 Gravity.CENTER_VERTICAL -> {
-                    tree.topPosition = (parentHeight - totalHeight) / 2
+                    top = (parentHeight - totalHeight) / 2
                 }
 
                 Gravity.END -> {
-                    tree.leftPosition = parentWidth - widthCurrent
+                    left = parentWidth - widthCurrent
                 }
 
                 Gravity.BOTTOM -> {
-                    tree.leftPosition = (parentWidth - widthCurrent) / 2
-                    tree.topPosition = parentHeight - totalHeight
+                  left = (parentWidth - widthCurrent) / 2
+                    top= parentHeight - totalHeight
 
                 }
 
             }
         }
 
+        return Pair(left,top)
 
     }
 

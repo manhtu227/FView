@@ -13,7 +13,6 @@ import android.view.ViewTreeObserver
 class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs) {
 
     private var rootFView: FView? = null
-    var pendingViews: MutableMap<String, View> = mutableMapOf()
 
     fun getRootFView(): FView? {
         return rootFView
@@ -35,8 +34,6 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
                     "Time to fully render (layout + draw): ${rootFView?.props?.id}  ${endTime - startTime} ms"
                 )
 
-            // Sau khi log xong có thể xóa listener nếu không cần dùng tiếp
-//            viewTreeObserver.removeOnGlobalLayoutListener(this)
         }
     }
 
@@ -45,8 +42,8 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
             startTime = System.currentTimeMillis()
 
         }
-        if (rootFView != null) {
-            pendingViews.clear()
+        Log.e("CustomViewGroup2", "setFViewTreer2342: ${fView.equals(rootFView)} ${fView.hashCode()} ${rootFView.hashCode()}")
+        if (fView != rootFView) {
             this.removeAllViews()
         }
 
@@ -64,10 +61,8 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
 
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-
-
-
-        rootFView?.measure(widthMeasureSpec, heightMeasureSpec)
+        val indexComponent=0
+        rootFView?.measure(widthMeasureSpec, heightMeasureSpec,indexComponent)
         if (rootFView?.props?.test == "7")
             Log.e(
                 "CustomViewGroup2",
@@ -89,7 +84,7 @@ class CustomViewGroup2(context: Context, attrs: AttributeSet? = null) : ViewGrou
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        rootFView?.layout(0, 0, 0, 0)
+        rootFView?.layout(0, 0,0)
     }
 
     override fun onDraw(canvas: Canvas) {
