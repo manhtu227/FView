@@ -14,5 +14,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+.env
+.env.*
+!.env.example
 
 .worktrees/

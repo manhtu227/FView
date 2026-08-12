@@ -55,10 +55,17 @@
             android:text="@string/sample_feed_page" />
 
         <Button
-            android:id="@+id/benchmarkButton"
+            android:id="@+id/aiStudioButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:text="@string/ai_studio" />
+
+        <Button
+            android:id="@+id/benchmarkButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:text="@string/benchmark" />
     </LinearLayout>
 </ScrollView>

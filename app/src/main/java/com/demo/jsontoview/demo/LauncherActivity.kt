@@ -24,6 +24,9 @@ class LauncherActivity : AppCompatActivity() {
         findViewById<Button>(R.id.sampleFeedButton).setOnClickListener {
             openSample("samples/feed-page.json")
         }
+        findViewById<Button>(R.id.aiStudioButton).setOnClickListener {
+            startActivity(Intent(this, AiStudioActivity::class.java))
+        }
         findViewById<Button>(R.id.benchmarkButton).setOnClickListener {
             startActivity(Intent(this, BenchmarkActivity::class.java))
         }

@@ -30,6 +30,9 @@
             android:name=".demo.SampleJsonActivity"
             android:exported="false" />
         <activity
+            android:name=".demo.AiStudioActivity"
+            android:exported="false" />
+        <activity
             android:name=".benchmark.BenchmarkActivity"
             android:exported="false" />
     </application>

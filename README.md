@@ -38,8 +38,21 @@ You can render the **same tree** with two engines:
 | Care about **deep View hierarchies** | Try Flat on hot paths; keep Nested for debug or simple screens |
 | Need a **fair Flat vs Nested comparison** | Same `FNode` tree, optional benchmark metrics |
 | Learn Android layout cost | Sample app shows feed render + on-device numbers |
+| Prototype layouts quickly | **AI Layout Studio** (sample): text → JSON → preview |
 
 **Not** a full design system, not a Compose replacement, not a consumer social app.
+
+### AI Layout Studio (sample app only)
+
+Describe a screen in natural language → **xAI** generates schema JSON → preview with Flat/Nested.
+
+```text
+Prompt → xAI → JSON → JsonTreeParser → JsonToViewHost
+```
+
+- Setup: [docs/ai-studio.md](docs/ai-studio.md) (`XAI_API_KEY` in gitignored `local.properties` for debug)
+- CLI: `python3 scripts/ai_layout.py "product card…" -o out.json`
+- **Not** bundled in the published AAR — no AI dependency in `:json-to-view`
 
 ---
 

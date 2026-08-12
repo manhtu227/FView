@@ -6,5 +6,18 @@
     <string name="sample_hello">Sample: hello.json</string>
     <string name="sample_card">Sample: card.json</string>
     <string name="sample_feed_page">Sample: feed-page.json</string>
+    <string name="ai_studio">AI Layout Studio</string>
     <string name="benchmark">Benchmark Flat vs Nested</string>
+
+    <string name="ai_studio_title">AI Layout Studio</string>
+    <string name="ai_studio_prompt_hint">Describe a mobile screen…</string>
+    <string name="ai_studio_generate">Generate</string>
+    <string name="ai_studio_json_label">Generated JSON</string>
+    <string name="ai_studio_missing_key">Add XAI_API_KEY to local.properties (debug only). See docs/ai-studio.md</string>
+    <string name="ai_studio_ready">Ready — describe a layout and tap Generate</string>
+    <string name="ai_studio_generating">Generating with xAI…</string>
+    <string name="ai_studio_success">Rendered. Toggle Flat/Nested without re-calling AI.</string>
+    <string name="ai_studio_error">Error: %1$s</string>
+    <string name="ai_studio_empty_prompt">Enter a prompt first</string>
+    <string name="ai_studio_default_prompt">A product card with a photo, title, short description, and a Shop now button that opens https://example.com</string>
 </resources>
