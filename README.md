@@ -336,17 +336,33 @@ Samples: [docs/schema/](docs/schema/) · demo notes: [docs/demo.md](docs/demo.md
 
 ## 🆚 How it compares
 
-| Approach | vs **json-to-view** |
-|----------|---------------------|
-| **1 JSON node → 1 View** (classic SDUI) | Nested mode is similar; **Flat** can cut view count on deep trees |
-| **Hardcoded XML / Compose only** | Faster for static apps; you **lose** remote layout without shipping app |
-| **WebView for remote UI** | Heavier, different a11y/perf model; this stays **native** |
-| **Full design system / CMS SDK** | We stay **small**: model + two renderers + hooks — not themes/components catalog |
-| **AI-in-the-library** | AI is **sample-only**; production AI should sit on **your server**, app only binds JSON |
+| | **Hardcoded XML / Compose** | **Classic SDUI**<br/>(1 node → 1 View) | **WebView remote UI** | **json-to-view** |
+|--|----------------------------|----------------------------------------|------------------------|------------------|
+| **UI lives** | in the app binary | in app Views, driven by JSON | in HTML/JS | in app (native Flat or Nested) |
+| **Layout comes from** | ship a new app build | backend JSON | backend HTML/URL | backend JSON (or AI → JSON) |
+| **What the model holds** | Kotlin/Compose code | usually full View tree | DOM | one `FNode` tree, two draw paths |
+| **Deep hierarchy cost** | you design it once | often expensive by default | browser engine cost | **Flat** can cut `View` count; **Nested** matches classic |
+| **Change layout without store release** | no | yes | yes | yes |
+| **Native look / a11y** | full native | full native | web-ish | full native |
+| **Images / navigation** | your code | often baked into SDK or Views | web | **your** `ImageLoader` + `ActionHandler` |
+| **Fair Flat vs Nested metrics** | n/a | n/a | n/a | built-in `BenchmarkRunner` |
+| **AI in the product surface** | optional elsewhere | rare | optional | **sample Studio only** — not inside the AAR |
+| **Runtime / cloud** | your app | your app + backend | WebView + network | your app + backend; core **offline** |
 
-**Fair comparison built-in:** same `TreeSpec` / `FNode` → Flat and Nested → `BenchmarkRunner` (Logcat `FViewBench`).
+<p align="center"><em>Same tree the user would get from the server — measured twice, drawn natively, not like a full browser or a forced 1:1 View map.</em></p>
+
+### When to pick what
+
+| You need… | Prefer |
+|-----------|--------|
+| Static, highly polished product UI | Compose / XML |
+| Remote layout, always real Views | Classic SDUI or **Nested** mode |
+| Remote layout + fewer Views on deep feeds | **Flat** mode |
+| Remote HTML already exists | WebView |
+| Remote layout **and** cost numbers on the same tree | **json-to-view** (Both in Benchmark) |
 
 ---
+
 
 ## ❓ FAQ
 
