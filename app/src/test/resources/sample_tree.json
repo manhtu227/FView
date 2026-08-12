@@ -1,0 +1,28 @@
+{
+  "viewType": 2,
+  "props": {
+    "width": { "value": -1, "unit": 1 },
+    "height": { "value": -2, "unit": 1 },
+    "orientation": 1,
+    "layoutType": 0,
+    "gap": 8,
+    "padding": { "left": 0, "top": 0, "right": 0, "bottom": 0 },
+    "margin": { "left": 0, "top": 0, "right": 0, "bottom": 0 },
+    "background": { "type": 1, "color": "#112233" }
+  },
+  "children": [
+    {
+      "viewType": 2,
+      "props": {
+        "width": { "value": -1, "unit": 1 },
+        "height": { "value": -2, "unit": 1 },
+        "orientation": 1,
+        "layoutType": 0,
+        "drawable": { "type": 1, "data": "Hello", "props": { "textSize": 14, "textColor": "#FFFFFF" } },
+        "padding": { "left": 0, "top": 0, "right": 0, "bottom": 0 },
+        "margin": { "left": 0, "top": 0, "right": 0, "bottom": 0 }
+      },
+      "children": []
+    }
+  ]
+}
