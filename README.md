@@ -6,41 +6,72 @@
 [![Release](https://img.shields.io/github/v/tag/manhtu227/FView?label=tag)](https://github.com/manhtu227/FView/tags)
 [![JitPack](https://jitpack.io/v/manhtu227/FView.svg)](https://jitpack.io/#manhtu227/FView)
 
-**json-to-view** is an Android SDK that renders a declarative UI tree (JSON or Kotlin) with **two backends**:
+**json-to-view** is a small Android SDK for **server-driven UI (SDUI)**:
 
-| Mode | Entry | Best for |
+- **Backend / CMS** describes the screen as JSON (layout tree + content)
+- **Your app** renders that JSON into real UI on the device
+
+```text
+Backend / CMS  ──JSON──►  json-to-view  ──►  Android UI
+   (describes)              (builds)           (user sees)
+```
+
+The backend does **not** create Android `View`s. It only ships a **description**.  
+This library is what **builds and draws** the UI on the client.
+
+You can render the **same tree** with two engines:
+
+| Mode | Class | Best for |
 |------|--------|----------|
-| **Flat** | `JsonToViewHost.Mode.FLAT` / `FlatHostView` | Performance — canvas draw, minimal Android `View` count |
-| **Nested** | `JsonToViewHost.Mode.NESTED` / `NestedHost` | Debug & inspection — real `View` / `ViewGroup` tree |
+| **Flat** | `JsonToViewHost.Mode.FLAT` · `FlatHostView` | Performance — canvas host, few Android Views |
+| **Nested** | `JsonToViewHost.Mode.NESTED` · `NestedHost` | Debug — real View hierarchy (Layout Inspector) |
 
-Both consume the same `FNode` model so you can switch renderers without rewriting the tree.
+> **Status:** `0.1.1` (early). Library + sample app. Install via monorepo module, `mavenLocal`, or [JitPack](https://jitpack.io/#manhtu227/FView).
 
-> **0.1.1** — library module + sample app. Install via project module, `mavenLocal`, or [JitPack](https://jitpack.io).
+---
 
-## Why
+## Who is this for?
 
-Deep Android view hierarchies are expensive (measure/layout, memory, first frame). Server-driven UI and feed clients often map **one JSON node → one `View`**.
+| You… | How this helps |
+|------|----------------|
+| Ship **feed / campaign / config UI** from the server | Map JSON → screen without rewriting the app for every layout tweak |
+| Care about **deep View hierarchies** | Try Flat on hot paths; keep Nested for debug or simple screens |
+| Need a **fair Flat vs Nested comparison** | Same `FNode` tree, optional benchmark metrics |
+| Learn Android layout cost | Sample app shows feed render + on-device numbers |
 
-This library keeps **one tree** and offers:
+**Not** a full design system, not a Compose replacement, not a consumer social app.
 
-- **Flat** — virtual layout + canvas (fewer framework views on hot paths)
-- **Nested** — classic view tree (easier Layout Inspector / gradual adoption)
-- **Benchmark tooling** — measure, layout, draw, first-frame, scroll, heap, view counts
+---
 
-Use it to ship a chosen backend, or to measure Flat vs Nested on your own trees.
+## Why it exists
+
+Typical SDUI stacks do **1 JSON node → 1 Android View**. Deep trees get expensive (measure/layout, first frame, memory, scroll).
+
+**json-to-view** keeps:
+
+1. **One model** — `FNode` / `TreeSpec` (from JSON or Kotlin)
+2. **Two renderers** — Flat (canvas) and Nested (Views)
+3. **Optional benchmarks** — measure / layout / draw / first-frame / scroll / heap / viewCount
+
+So teams can **describe UI on the backend**, **render on the client**, and **measure** before locking an architecture.
+
+---
 
 ## Features
 
-- Shared model: `FNode`, `NodeKind`, `NodeProps`, `Dimension`, `TreeSpec`
-- JSON parser for a practical `view.json`-style subset
-- `JsonToViewHost` — single widget, switch `FLAT` / `NESTED`
-- Optional `BenchmarkRunner` for A/B metrics
-- Synthetic tree factory for depth/width sweeps
-- Core path stays offline (no network image loads)
+- Shared pure model: `FNode`, `NodeKind`, `NodeProps`, `Dimension`, `TreeSpec`
+- JSON parser for a practical legacy-style `view.json` subset
+- `JsonToViewHost` — one widget, switch `FLAT` / `NESTED`
+- `LIST` → `RecyclerView` (per-item host for fair list comparison)
+- Optional `BenchmarkRunner` + sample Benchmark UI
+- Synthetic trees (shallow / deep / wide / feed-like) for sweeps
+- Core path stays **offline** (no network image loader in the library hot path)
+
+---
 
 ## Install
 
-### JitPack (third-party apps)
+### JitPack (recommended for other apps)
 
 **settings.gradle.kts**
 
@@ -62,9 +93,7 @@ dependencies {
 }
 ```
 
-> First JitPack build for a new tag can take a few minutes (Android SDK compile on their side).
-
-### This monorepo
+### This repository
 
 ```kotlin
 implementation(project(":json-to-view"))
@@ -81,16 +110,20 @@ repositories { mavenLocal() }
 implementation("io.github.manhtu227:json-to-view:0.1.1")
 ```
 
+---
+
 ## Quick start
 
 ```kotlin
 import com.manhtu.jsontoview.JsonToViewHost
 import android.view.ViewGroup
 
+// JSON from your backend / assets / CMS
 val host = JsonToViewHost(context).apply {
     mode = JsonToViewHost.Mode.FLAT   // or NESTED
-    bindJson(jsonString)             // or bind(fNode)
+    bindJson(jsonString)
 }
+
 container.addView(
     host,
     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -98,7 +131,7 @@ container.addView(
 )
 ```
 
-### Build a tree in code
+### Build a tree in code (no JSON)
 
 ```kotlin
 import com.manhtu.jsontoview.model.*
@@ -118,6 +151,7 @@ val root = FNode(
         ),
     ),
 )
+
 host.mode = JsonToViewHost.Mode.NESTED
 host.bind(root)
 ```
@@ -131,71 +165,81 @@ val node = JsonToView.parse(json)
 val spec = JsonToView.parseTree(json, name = "feed")
 ```
 
+---
+
 ## JSON mapping
 
-Legacy-style tree JSON (as in the sample `view.json`) maps as follows:
+How backend-style JSON becomes `NodeKind` (subset used by the sample `view.json`):
 
-| Input | `NodeKind` |
-|-------|------------|
-| `viewType == 1` (list / RecyclerView) | `LIST` |
+| Backend JSON | Client `NodeKind` |
+|--------------|-------------------|
+| `viewType == 1` (list) | `LIST` |
 | `viewType == 2`, `orientation == 0` | `ROW` |
 | `viewType == 2`, `orientation == 1` | `COLUMN` |
-| `layoutType == 1` (stack) | `STACK` (wins over row/column) |
-| `drawable.type == 1` (text), no meaningful children | `TEXT` |
-| Image / button / icon drawable | `BOX` (solid color placeholder) |
+| `layoutType == 1` (stack) | `STACK` (overrides row/column) |
+| Text drawable, no meaningful children | `TEXT` |
+| Image / button / icon drawable | `BOX` (solid color in core; no Glide) |
 | `viewType == 3` | `BOX` |
 
-Dimensions: `width` / `height` with `value` + `unit` (`1` = dp, `2` = px, `3` = percent).  
-Sentinels: `-1` = match parent, `-2` = wrap content.  
-Unknown fields are ignored. Image loading is intentionally out of core scope.
+**Size:** `width` / `height` with `value` + `unit` (`1` = dp, `2` = px, `3` = percent).  
+**Sentinels:** `-1` = match parent, `-2` = wrap content.  
+Unknown fields are ignored. Apps own image loading if they add it later.
+
+---
 
 ## Public API
 
-| Type | Role |
-|------|------|
-| `JsonToViewHost` | Main entry; `mode`, `bind`, `bindJson`, `clear` |
+| API | Role |
+|-----|------|
+| `JsonToViewHost` | Main entry: `mode`, `bind`, `bindJson`, `clear` |
 | `JsonToView` | `parse` / `parseTree` helpers |
-| `FlatHostView` | Flat backend |
-| `NestedHost` | Nested backend |
+| `FlatHostView` | Flat (canvas) backend |
+| `NestedHost` | Nested (View tree) backend |
 | `FNode`, `NodeProps`, … | Tree model |
 | `JsonTreeParser` | JSON → `FNode` |
-| `BenchmarkRunner` | Optional metrics (sample app uses this) |
+| `BenchmarkRunner` | Optional metrics tooling |
 
 Package: `com.manhtu.jsontoview`
+
+---
 
 ## Architecture
 
 ```
-JSON or Kotlin FNode
-         │
-      TreeSpec
-    ┌────┴────┐
-FlatHostView  NestedHost
- (canvas)     (Views)
-    └────┬────┘
-  JsonToViewHost
+Backend JSON or Kotlin FNode
+            │
+         TreeSpec / FNode      ← one shared model
+       ┌────┴────┐
+ FlatHostView   NestedHost
+  (canvas)       (Views)
+       └────┬────┘
+     JsonToViewHost            ← mode switch
+            │
+     BenchmarkRunner           ← optional
 ```
 
-## Modules
+---
+
+## Modules in this repo
 
 | Path | Role |
 |------|------|
-| [`json-to-view/`](json-to-view/) | Publishable Android library (AAR) |
-| [`app/`](app/) | Sample: launcher, feed demo, on-device benchmark UI |
+| [`json-to-view/`](json-to-view/) | **SDK** (publishable AAR) — what other apps depend on |
+| [`app/`](app/) | **Sample only** — not published; proves the SDK works |
 
-## Sample app (demo)
-
-See also [docs/demo.md](docs/demo.md).
+### Sample app
 
 ```bash
 ./gradlew :app:installDebug
 adb shell am start -n com.demo.jsontoview/.demo.LauncherActivity
 ```
 
-| Screen | What it shows |
-|--------|----------------|
-| **Feed demo** | Parses `assets/view.json`, renders with **Flat** via `JsonToViewHost` |
-| **Benchmark** | Flat / Nested / Both on feed or synthetic trees; Logcat tag `FViewBench` |
+| Screen | Purpose |
+|--------|---------|
+| **Feed demo** | Load `assets/view.json`, render with **Flat** (typical production path) |
+| **Benchmark** | Flat / Nested / Both · synthetic or feed · Logcat `FViewBench` |
+
+More detail: [docs/demo.md](docs/demo.md) · sample numbers: [docs/benchmark-notes.md](docs/benchmark-notes.md)
 
 ```bash
 ./gradlew :json-to-view:testDebugUnitTest
@@ -203,20 +247,22 @@ adb shell am start -n com.demo.jsontoview/.demo.LauncherActivity
 ./gradlew :json-to-view:publishToMavenLocal
 ```
 
-Sample benchmark notes (device-specific): [docs/benchmark-notes.md](docs/benchmark-notes.md).
+---
 
 ## Status & roadmap
 
 - [x] Dual backends + shared model  
 - [x] JSON subset parser  
-- [x] `JsonToViewHost`  
+- [x] `JsonToViewHost` public entry  
 - [x] Sample feed + benchmark UI  
 - [x] Unit tests + CI  
-- [x] JitPack-oriented publish config  
+- [x] JitPack-oriented packaging (`v0.1.1`)  
 - [ ] Maven Central  
-- [ ] Pluggable image loader (app-supplied)  
+- [ ] App-provided image loader hook  
+- [ ] Stable JSON schema docs for 1.0  
 - [ ] Dokka API site  
-- [ ] Stable 1.0 API freeze  
+
+---
 
 ## Contributing
 
@@ -226,7 +272,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 ./gradlew :json-to-view:testDebugUnitTest
 ```
 
-Keep the core/benchmark path free of network image loading.
+Please keep the core / benchmark path free of network image loading.
 
 ## Security
 
