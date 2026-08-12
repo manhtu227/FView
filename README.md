@@ -30,7 +30,7 @@
   <a href="#-how-it-works">How it works</a> ·
   <a href="#-packages">Packages</a> ·
   <a href="#️-configuration">Configuration</a> ·
-  <a href="#-the-gate">The gate</a> ·
+  <a href="#-the-gate-seen">The gate, seen</a> ·
   <a href="#-seen">Seen</a> ·
   <a href="#-how-it-compares">Compare</a> ·
   <a href="#-faq">FAQ</a>
@@ -54,16 +54,21 @@ In this project the **pointer** is the **declarative UI tree** the backend (or A
 
 You do **not** drop Android Views from the server. You drop a **description**. The host moves in and builds what the user sees — **natively** (Flat canvas or Nested Views).
 
-```text
-Backend / CMS / AI
-        │  JSON tree  ← the pointer
-        ▼
-  JsonToViewHost.bindJson(...)
-        │
-   ┌────┴────┐
- Flat     Nested     ← same tree, two ways to draw
-        │
-   User screen
+```mermaid
+flowchart LR
+  B["Backend / CMS / AI"]
+  J["JSON tree<br/>the pointer"]
+  H["JsonToViewHost"]
+  F["Flat<br/>canvas"]
+  N["Nested<br/>Views"]
+  U["User screen"]
+
+  B -->|emit| J
+  J -->|bindJson| H
+  H --> F
+  H --> N
+  F --> U
+  N --> U
 ```
 
 Stable mapping: [docs/MAPPING_STABLE.md](docs/MAPPING_STABLE.md) · full schema: [docs/schema.md](docs/schema.md)
@@ -77,6 +82,31 @@ Stable mapping: [docs/MAPPING_STABLE.md](docs/MAPPING_STABLE.md) · full schema:
 3. **Configure** — optional `RenderConfig` (image loader + action handler from **your app**).  
 4. **Render** — `JsonToViewHost` with `Mode.FLAT` or `Mode.NESTED`.  
 5. **Measure** (optional) — `BenchmarkRunner` compares cost on the **same** tree.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Backend as Backend / CMS / AI
+  participant App as Your app
+  participant Host as JsonToViewHost
+  participant SDK as Parser + Flat/Nested
+  participant User as User
+
+  Backend->>App: JSON layout tree
+  App->>Host: renderConfig (ImageLoader, ActionHandler)
+  App->>Host: bindJson(json)
+  Host->>SDK: parse → FNode
+  alt parse ok
+    SDK->>Host: tree ready
+    Host->>SDK: measure / layout / draw
+    SDK->>User: native UI (seen)
+  else parse fail
+    SDK-->>App: error — do not bind
+  end
+  User->>Host: tap node with action
+  Host->>App: ActionHandler.onAction(...)
+  App->>User: navigate / open_url / …
+```
 
 ```kotlin
 val host = JsonToViewHost(context).apply {
@@ -165,26 +195,116 @@ See [docs/ai-studio.md](docs/ai-studio.md). CLI: `python3 scripts/ai_layout.py "
 
 ---
 
-## 🚦 The gate
+## 🚦 The gate, seen
 
-Nothing untrusted should reach the screen without checks:
+Remote or AI-generated UI makes **governance more necessary, not less**.  
+Nothing untrusted reaches the screen until it passes the **gate** — parse, schema, and app-owned image/action hooks. The **security boundary is the gate**, not the prompt.
+
+### Bind path (JSON → screen)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Src as Backend or AI
+  participant Gate as SDK · gate
+  participant App as Your app
+  participant User as You (user)
+
+  Src->>Gate: bindJson / FNode
+  Gate->>Gate: parse + schema check
+  alt Invalid JSON / shape
+    Gate-->>App: error — blocked (not drawn)
+  else Valid tree
+    Gate->>Gate: measure / layout / draw
+    Note over Gate,User: native UI is spotlit on device
+    Gate->>User: screen seen (Flat or Nested)
+  end
+```
+
+### Action path (tap → your policy)
+
+When a node carries `action`, the SDK does **not** navigate by itself. It **spotlights** the intent and hands control to **your** handler — you approve what happens next.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant User as You (user)
+  participant Host as JsonToViewHost
+  participant Gate as SDK · gate
+  participant App as Your app (ActionHandler)
+
+  User->>Host: tap node with action
+  Host->>Gate: resolve NodeAction
+  alt no ActionHandler configured
+    Gate-->>User: ignore (no side effect)
+  else handler present
+    Gate->>App: onAction(node, action)
+    Note over App: your policy — open_url / navigate / deny
+    alt allowed
+      App->>User: execute (browser, screen, …)
+    else denied
+      App-->>User: blocked by app policy
+    end
+  end
+```
+
+### Image path (URL → pixels)
+
+```mermaid
+sequenceDiagram
+  participant Host as Flat / Nested
+  participant Gate as SDK · gate
+  participant Loader as App ImageLoader
+  participant Net as Network
+
+  Host->>Gate: node.imageUrl set?
+  alt no URL
+    Gate->>Host: background / empty box
+  else URL + no loader
+    Gate->>Host: placeholder color (offline-safe)
+  else URL + loader
+    Gate->>Loader: load(url)
+    Loader->>Net: fetch
+    alt ok
+      Net-->>Loader: bytes
+      Loader-->>Host: onSuccess(drawable) → seen
+    else fail
+      Loader-->>Host: onError → placeholder
+    end
+  end
+```
 
 | Gate | What happens |
 |------|----------------|
-| **Parse** | `JsonTreeParser.parse` — invalid JSON / shape → fail before bind |
-| **Schema** | Stable `type` + props ([MAPPING_STABLE](docs/MAPPING_STABLE.md)); unknown fields ignored |
-| **Images** | No loader in core → placeholder only; your loader decides network |
-| **Actions** | No handler → no side effects; your handler decides navigate/open |
+| **Parse** | Invalid JSON / shape → **fail before bind** |
+| **Schema** | Stable `type` + props; unknown fields ignored |
+| **Images** | Core never fetches; **your** `ImageLoader` owns network |
+| **Actions** | Core never navigates; **your** `NodeActionHandler` owns side effects |
 | **AI (sample)** | Model output must parse; bad JSON is not bound |
-| **Benchmark** | Default `RenderConfig()` — no network, deterministic cost |
+| **Benchmark** | Empty `RenderConfig` — no network, deterministic cost |
 
-Public surface and freeze rules: [docs/api-1.0.md](docs/api-1.0.md).
+Public surface: [docs/api-1.0.md](docs/api-1.0.md).
 
 ---
 
 ## 👁 Seen
 
-What the **user** actually sees is always **native Android UI**, not a webview:
+What the **user** actually sees is always **native Android UI**, not a WebView:
+
+```mermaid
+flowchart TB
+  JSON["JSON / FNode"]
+  JSON --> TEXT["text → label"]
+  JSON --> BOX["box → color / image"]
+  JSON --> LAY["row / column / stack"]
+  JSON --> LIST["list → RecyclerView"]
+  JSON --> ACT["action → tap → your app"]
+  TEXT --> SEEN["Seen on device"]
+  BOX --> SEEN
+  LAY --> SEEN
+  LIST --> SEEN
+  ACT --> SEEN
+```
 
 | Source | What appears on device |
 |--------|-------------------------|
