@@ -1,350 +1,290 @@
 # json-to-view
 
 <p align="center">
-  <strong>Backend describes the screen as JSON — the app builds the UI the user sees.</strong><br/>
-  One shared tree model. Two native renderers. Optional benchmarks and AI layout studio (sample).
+  <strong>Drop a JSON tree on the client — the app builds the screen the user sees, natively.</strong><br/>
+  One model. Two renderers. Measure cost. Optional AI studio in the sample app only.
 </p>
 
 <p align="center">
-  <em>same&nbsp;FNode · Flat&nbsp;(canvas)&nbsp;or&nbsp;Nested&nbsp;(Views) · offline&nbsp;core · app-injected&nbsp;images/actions · no&nbsp;AI&nbsp;in&nbsp;the&nbsp;AAR</em>
+  <em>same&nbsp;FNode · Flat&nbsp;(canvas)&nbsp;/&nbsp;Nested&nbsp;(Views) · offline&nbsp;core · app-owned&nbsp;images&nbsp;&amp;&nbsp;actions</em>
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/LICENSE-Apache%202.0-7c83ff?style=for-the-badge&labelColor=3d3d4a" /></a>
   <img alt="Kotlin" src="https://img.shields.io/badge/KOTLIN-Android-7F52FF?style=for-the-badge&labelColor=3d3d4a&logo=kotlin&logoColor=white" />
-  <img alt="API" src="https://img.shields.io/badge/MIN_SDK-24%2B-2ea44f?style=for-the-badge&labelColor=3d3d4a" />
+  <img alt="API" src="https://img.shields.io/badge/MIN_SDK-24%2B-2ea5e9?style=for-the-badge&labelColor=3d3d4a" />
   <img alt="SDUI" src="https://img.shields.io/badge/SDUI-JSON%20→%20UI-0ea5e9?style=for-the-badge&labelColor=3d3d4a" />
-  <img alt="Renderers" src="https://img.shields.io/badge/RENDER-Flat%20%7C%20Nested-111827?style=for-the-badge&labelColor=3d3d4a" />
+  <img alt="Render" src="https://img.shields.io/badge/RENDER-Flat%20%7C%20Nested-111827?style=for-the-badge&labelColor=3d3d4a" />
   <img alt="Core" src="https://img.shields.io/badge/CORE-Offline-14b8a6?style=for-the-badge&labelColor=3d3d4a" />
   <img alt="AI" src="https://img.shields.io/badge/AI-Sample%20only-f472b6?style=for-the-badge&labelColor=3d3d4a" />
 </p>
 
 <p align="center">
   <a href="https://github.com/manhtu227/FView/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/manhtu227/FView/ci.yml?branch=main&style=for-the-badge&label=CI&labelColor=3d3d4a" /></a>
-  <a href="https://github.com/manhtu227/FView/releases"><img alt="Version" src="https://img.shields.io/badge/v1.0.0-stable%20API-22c55e?style=for-the-badge&labelColor=3d3d4a" /></a>
+  <a href="https://github.com/manhtu227/FView/releases"><img alt="Version" src="https://img.shields.io/badge/v1.0.0-API%20freeze-22c55e?style=for-the-badge&labelColor=3d3d4a" /></a>
   <img alt="Status" src="https://img.shields.io/badge/STATUS-OPEN%20SOURCE-f59e0b?style=for-the-badge&labelColor=3d3d4a" />
-  <a href="https://jitpack.io/#manhtu227/FView"><img alt="JitPack" src="https://img.shields.io/badge/JITPACK-json--to--view-lightgrey?style=for-the-badge&labelColor=3d3d4a" /></a>
 </p>
 
 <p align="center">
-  <a href="#why-it-exists">Why</a> ·
-  <a href="#install">Install</a> ·
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#json-mapping">JSON mapping</a> ·
-  <a href="#ai-layout-studio-sample-app-only">AI Studio</a> ·
-  <a href="#modules-in-this-repo">Modules</a> ·
-  <a href="#status--roadmap">Roadmap</a>
+  <a href="#the-pointer">The pointer</a> ·
+  <a href="#-how-it-works">How it works</a> ·
+  <a href="#-packages">Packages</a> ·
+  <a href="#️-configuration">Configuration</a> ·
+  <a href="#-the-gate">The gate</a> ·
+  <a href="#-seen">Seen</a> ·
+  <a href="#-how-it-compares">Compare</a> ·
+  <a href="#-faq">FAQ</a>
 </p>
 
 > **Note**  
-> **v1.0.0** freezes the public SDK API ([docs/api-1.0.md](docs/api-1.0.md)). Stable JSON mapping: [docs/MAPPING_STABLE.md](docs/MAPPING_STABLE.md).  
-> Sample app includes feed, benchmark, and optional **AI Layout Studio** (not in the AAR). Issues and feedback welcome.
+> Public SDK API is frozen for **v1.x** — see [docs/api-1.0.md](docs/api-1.0.md).  
+> AI Layout Studio lives in the **sample app only** (not the published AAR). Feedback welcome.
 
 ---
 
-### Idea in one diagram
+## The pointer
+
+In this project the **pointer** is the **declarative UI tree** the backend (or AI, or Kotlin code) hands the client:
+
+| Layer | What it is |
+|-------|------------|
+| **JSON** | What backend / CMS / AI emits (`type`, `props`, `children`) |
+| **`FNode`** | In-memory tree after parse |
+| **`JsonToViewHost`** | Single widget that “hosts” that tree and draws it |
+
+You do **not** drop Android Views from the server. You drop a **description**. The host moves in and builds what the user sees — **natively** (Flat canvas or Nested Views).
 
 ```text
-Backend / CMS  ──JSON──►  json-to-view  ──►  Android UI
-   (describes)              (builds)           (user sees)
+Backend / CMS / AI
+        │  JSON tree  ← the pointer
+        ▼
+  JsonToViewHost.bindJson(...)
+        │
+   ┌────┴────┐
+ Flat     Nested     ← same tree, two ways to draw
+        │
+   User screen
 ```
 
-The backend does **not** create Android `View`s. It only ships a **description**.  
-This library **builds and draws** the UI on the client — with the **same tree** on two engines:
-
-| Mode | Class | Best for |
-|------|--------|----------|
-| **Flat** | `JsonToViewHost.Mode.FLAT` · `FlatHostView` | Performance — canvas host, few Android Views |
-| **Nested** | `JsonToViewHost.Mode.NESTED` · `NestedHost` | Debug — real View hierarchy (Layout Inspector) |
+Stable mapping: [docs/MAPPING_STABLE.md](docs/MAPPING_STABLE.md) · full schema: [docs/schema.md](docs/schema.md)
 
 ---
 
-## Who is this for?
+## 🧭 How it works
 
-| You… | How this helps |
-|------|----------------|
-| Ship **feed / campaign / config UI** from the server | Map JSON → screen without rewriting the app for every layout tweak |
-| Care about **deep View hierarchies** | Try Flat on hot paths; keep Nested for debug or simple screens |
-| Need a **fair Flat vs Nested comparison** | Same `FNode` tree, optional benchmark metrics |
-| Learn Android layout cost | Sample app shows feed render + on-device numbers |
-| Prototype layouts quickly | **AI Layout Studio** (sample): text → JSON → preview |
-
-**Not** a full design system, not a Compose replacement, not a consumer social app.
-
-### AI Layout Studio (sample app only)
-
-Describe a screen in natural language → **AI API** generates schema JSON → preview with Flat/Nested.
-
-```text
-Prompt → AI (OpenAI-compatible) → JSON → JsonTreeParser → JsonToViewHost
-```
-
-- Setup: [docs/ai-studio.md](docs/ai-studio.md) (`AI_API_KEY` in gitignored `local.properties` for debug)
-- CLI: `python3 scripts/ai_layout.py "product card…" -o out.json`
-- **Not** bundled in the published AAR — no AI dependency in `:json-to-view`
-
----
-
-## Why it exists
-
-Typical SDUI stacks do **1 JSON node → 1 Android View**. Deep trees get expensive (measure/layout, first frame, memory, scroll).
-
-**json-to-view** keeps:
-
-1. **One model** — `FNode` / `TreeSpec` (from JSON or Kotlin)
-2. **Two renderers** — Flat (canvas) and Nested (Views)
-3. **Optional benchmarks** — measure / layout / draw / first-frame / scroll / heap / viewCount
-
-So teams can **describe UI on the backend**, **render on the client**, and **measure** before locking an architecture.
-
----
-
-## Features
-
-- Shared pure model: `FNode`, `NodeKind`, `NodeProps`, `Dimension`, `TreeSpec`
-- JSON parser for a practical legacy-style `view.json` subset
-- `JsonToViewHost` — one widget, switch `FLAT` / `NESTED`
-- `LIST` → `RecyclerView` (per-item host for fair list comparison)
-- Optional `BenchmarkRunner` + sample Benchmark UI
-- Synthetic trees (shallow / deep / wide / feed-like) for sweeps
-- Core path stays **offline** (no network image loader in the library hot path)
-
----
-
-## Install
-
-### JitPack (recommended for other apps)
-
-**settings.gradle.kts**
+1. **Describe** — backend (or sample AI Studio) produces JSON or you build `FNode` in Kotlin.  
+2. **Parse** — `JsonTreeParser` / `JsonToView.parse` → `FNode`.  
+3. **Configure** — optional `RenderConfig` (image loader + action handler from **your app**).  
+4. **Render** — `JsonToViewHost` with `Mode.FLAT` or `Mode.NESTED`.  
+5. **Measure** (optional) — `BenchmarkRunner` compares cost on the **same** tree.
 
 ```kotlin
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-```
-
-**app/build.gradle.kts**
-
-```kotlin
-dependencies {
-    implementation("com.github.manhtu227.FView:json-to-view:v1.0.0")
-}
-```
-
-### This repository
-
-```kotlin
-implementation(project(":json-to-view"))
-```
-
-### mavenLocal
-
-```bash
-./gradlew :json-to-view:publishToMavenLocal
-```
-
-```kotlin
-repositories { mavenLocal() }
-implementation("io.github.manhtu227:json-to-view:1.0.0")
-```
-
----
-
-## Quick start
-
-```kotlin
-import com.manhtu.jsontoview.JsonToViewHost
-import android.view.ViewGroup
-
-// JSON from your backend / assets / CMS
 val host = JsonToViewHost(context).apply {
-    mode = JsonToViewHost.Mode.FLAT   // or NESTED
-    bindJson(jsonString)
+    mode = JsonToViewHost.Mode.FLAT
+    renderConfig = RenderConfig(
+        imageLoader = MyImageLoader(context),      // app provides
+        actionHandler = { node, action -> /* navigate */ },
+    )
+    bindJson(backendJson)
 }
+container.addView(host, MATCH_PARENT, MATCH_PARENT)
+```
 
-container.addView(
-    host,
-    ViewGroup.LayoutParams.MATCH_PARENT,
-    ViewGroup.LayoutParams.MATCH_PARENT,
+| Mode | Best for |
+|------|----------|
+| **FLAT** | Performance — few Android `View`s, canvas draw |
+| **NESTED** | Debug / inspection — real `View` hierarchy |
+
+---
+
+## 📦 Packages
+
+| Package / module | Role |
+|------------------|------|
+| **`com.manhtu.jsontoview`** | `JsonToViewHost`, `JsonToView`, `RenderConfig` |
+| **`.model`** | `FNode`, `NodeProps`, `NodeAction`, `Dimension`, … |
+| **`.parse`** | `JsonTreeParser` |
+| **`.flat`** | `FlatHostView` |
+| **`.nested`** | `NestedHost`, `NestedTreeBuilder` |
+| **`.image` / `.action`** | `ImageLoader`, `NodeActionHandler` (contracts only) |
+| **`.benchmark`** | `BenchmarkRunner`, reports (tooling) |
+| **`:json-to-view`** | Publishable AAR |
+| **`:app`** | Sample (feed, samples, AI Studio, benchmark) — not published |
+| **`:consumer-demo`** | Second app using the library as a consumer |
+
+Install (JitPack):
+
+```kotlin
+// settings.gradle.kts
+maven { url = uri("https://jitpack.io") }
+
+// app/build.gradle.kts
+implementation("com.github.manhtu227.FView:json-to-view:v1.0.0")
+```
+
+Monorepo: `implementation(project(":json-to-view"))`  
+Local: `./gradlew :json-to-view:publishToMavenLocal` → `io.github.manhtu227:json-to-view:1.0.0`
+
+---
+
+## ⚙️ Configuration
+
+### Host
+
+| Setting | Meaning |
+|---------|---------|
+| `mode` | `FLAT` or `NESTED` |
+| `bind` / `bindJson` / `clear` | Attach or detach the tree |
+| `renderConfig` | Images + taps (see below) |
+
+### `RenderConfig` (app-owned)
+
+```kotlin
+RenderConfig(
+    imageLoader = …,              // null → solid placeholder (bench-safe)
+    actionHandler = …,            // null → taps ignored
+    imagePlaceholderColor = 0xFF888888.toInt(),
 )
 ```
 
-### Build a tree in code (no JSON)
+| Concern | Where it lives |
+|---------|----------------|
+| Network images (Glide/Coil) | **Your app** implements `ImageLoader` |
+| Navigation / analytics on tap | **Your app** implements `NodeActionHandler` |
+| Layout measure/draw | **SDK** |
+| AI API keys | **Sample / your server only** — never in the AAR |
 
-```kotlin
-import com.manhtu.jsontoview.model.*
+### Sample AI Studio (optional)
 
-val root = FNode(
-    kind = NodeKind.COLUMN,
-    props = NodeProps(width = Dimension.MATCH, height = Dimension.MATCH, gap = 8),
-    children = listOf(
-        FNode(
-            kind = NodeKind.TEXT,
-            props = NodeProps(
-                width = Dimension.WRAP,
-                height = Dimension.WRAP,
-                text = "Hello json-to-view",
-                textSizeSp = 18f,
-            ),
-        ),
-    ),
-)
+| Key | Where |
+|-----|--------|
+| `AI_API_KEY` | `local.properties` (debug only, gitignored) |
+| `AI_BASE_URL` / `AI_MODEL` | BuildConfig defaults (OpenAI-compatible) |
 
-host.mode = JsonToViewHost.Mode.NESTED
-host.bind(root)
-```
-
-### Parse only
-
-```kotlin
-import com.manhtu.jsontoview.JsonToView
-
-val node = JsonToView.parse(json)
-val spec = JsonToView.parseTree(json, name = "feed")
-```
+See [docs/ai-studio.md](docs/ai-studio.md). CLI: `python3 scripts/ai_layout.py "…" -o out.json`
 
 ---
 
-## JSON mapping
+## 🚦 The gate
 
-How backend-style JSON becomes `NodeKind` (subset used by the sample `view.json`):
+Nothing untrusted should reach the screen without checks:
 
-| Backend JSON | Client `NodeKind` |
-|--------------|-------------------|
-| `viewType == 1` (list) | `LIST` |
-| `viewType == 2`, `orientation == 0` | `ROW` |
-| `viewType == 2`, `orientation == 1` | `COLUMN` |
-| `layoutType == 1` (stack) | `STACK` (overrides row/column) |
-| Text drawable, no meaningful children | `TEXT` |
-| Image / button / icon drawable | `BOX` (solid color in core; no Glide) |
-| `viewType == 3` | `BOX` |
+| Gate | What happens |
+|------|----------------|
+| **Parse** | `JsonTreeParser.parse` — invalid JSON / shape → fail before bind |
+| **Schema** | Stable `type` + props ([MAPPING_STABLE](docs/MAPPING_STABLE.md)); unknown fields ignored |
+| **Images** | No loader in core → placeholder only; your loader decides network |
+| **Actions** | No handler → no side effects; your handler decides navigate/open |
+| **AI (sample)** | Model output must parse; bad JSON is not bound |
+| **Benchmark** | Default `RenderConfig()` — no network, deterministic cost |
 
-**Size:** `width` / `height` with `value` + `unit` (`1` = dp, `2` = px, `3` = percent).  
-**Sentinels:** `-1` = match parent, `-2` = wrap content.  
-Unknown fields are ignored. Apps own image loading if they add it later.
+Public surface and freeze rules: [docs/api-1.0.md](docs/api-1.0.md).
 
 ---
 
-## Public API
+## 👁 Seen
 
-| API | Role |
-|-----|------|
-| `JsonToViewHost` | Main entry: `mode`, `bind`, `bindJson`, `clear` |
-| `JsonToView` | `parse` / `parseTree` helpers |
-| `FlatHostView` | Flat (canvas) backend |
-| `NestedHost` | Nested (View tree) backend |
-| `FNode`, `NodeProps`, … | Tree model |
-| `JsonTreeParser` | JSON → `FNode` |
-| `BenchmarkRunner` | Optional metrics tooling |
+What the **user** actually sees is always **native Android UI**, not a webview:
 
-Package: `com.manhtu.jsontoview`
+| Source | What appears on device |
+|--------|-------------------------|
+| `text` | Text (Flat canvas / Nested `TextView`) |
+| `box` + color | Colored rect |
+| `box` + `imageUrl` | Image via **your** loader, or gray placeholder |
+| `row` / `column` / `stack` | Layout structure |
+| `list` | Vertical `RecyclerView` of item subtrees |
+| `action` | Tap → your handler (toast/navigate/…) |
 
----
+**Same JSON** → switch Flat ↔ Nested → same content, different hierarchy cost.
 
-## Architecture
-
-```
-Backend JSON or Kotlin FNode
-            │
-         TreeSpec / FNode      ← one shared model
-       ┌────┴────┐
- FlatHostView   NestedHost
-  (canvas)       (Views)
-       └────┬────┘
-     JsonToViewHost            ← mode switch
-            │
-     BenchmarkRunner           ← optional
-```
-
----
-
-## Modules in this repo
-
-| Path | Role |
-|------|------|
-| [`json-to-view/`](json-to-view/) | **SDK** (publishable AAR) — what other apps depend on |
-| [`app/`](app/) | **Sample only** — not published; proves the SDK works |
-
-### Sample app
+**See it running:**
 
 ```bash
 ./gradlew :app:installDebug
 adb shell am start -n com.demo.jsontoview/.demo.LauncherActivity
 ```
 
-| Screen | Purpose |
-|--------|---------|
-| **Feed demo** | Load `assets/view.json`, render with **Flat** (typical production path) |
-| **Benchmark** | Flat / Nested / Both · synthetic or feed · Logcat `FViewBench` |
+| Screen | What you see |
+|--------|----------------|
+| Feed / samples | Real JSON trees on screen |
+| AI Layout Studio | Prompt → generated UI |
+| Benchmark | Numbers: measure, layout, first frame, viewCount, … |
 
-More detail: [docs/demo.md](docs/demo.md) · sample numbers: [docs/benchmark-notes.md](docs/benchmark-notes.md)
-
-```bash
-./gradlew :json-to-view:testDebugUnitTest
-./gradlew :app:assembleDebug
-./gradlew :json-to-view:publishToMavenLocal
-```
+Samples: [docs/schema/](docs/schema/) · demo notes: [docs/demo.md](docs/demo.md)
 
 ---
 
-## Schema & SDUI
+## 🆚 How it compares
 
-- **Schema:** [docs/schema.md](docs/schema.md) — `type`, `imageUrl`, `action`
-- **Samples:** [docs/schema/](docs/schema/) (`hello`, `card`, `feed-page`)
-- **Feed templates:** [docs/feed-templates.md](docs/feed-templates.md)
-- **Stable mapping 1.0:** [docs/MAPPING_STABLE.md](docs/MAPPING_STABLE.md)
-- **API freeze:** [docs/api-1.0.md](docs/api-1.0.md)
-- **Consumer demo:** module `:consumer-demo` (second app using the library)
+| Approach | vs **json-to-view** |
+|----------|---------------------|
+| **1 JSON node → 1 View** (classic SDUI) | Nested mode is similar; **Flat** can cut view count on deep trees |
+| **Hardcoded XML / Compose only** | Faster for static apps; you **lose** remote layout without shipping app |
+| **WebView for remote UI** | Heavier, different a11y/perf model; this stays **native** |
+| **Full design system / CMS SDK** | We stay **small**: model + two renderers + hooks — not themes/components catalog |
+| **AI-in-the-library** | AI is **sample-only**; production AI should sit on **your server**, app only binds JSON |
 
-### Image + action (app code)
+**Fair comparison built-in:** same `TreeSpec` / `FNode` → Flat and Nested → `BenchmarkRunner` (Logcat `FViewBench`).
+
+---
+
+## ❓ FAQ
+
+**Is the backend building Android Views?**  
+No. Backend (or AI) builds a **description**. The app builds Views/canvas.
+
+**Do I need AI?**  
+No. AI Studio is optional sample tooling. Production path is JSON from your backend.
+
+**Where does the API key go?**  
+Not in the published SDK. Sample: `AI_API_KEY` in gitignored `local.properties` (debug only). Production: server proxy.
+
+**Flat or Nested?**  
+Flat for hot paths / deep trees; Nested when you want Layout Inspector and classic hierarchy. You can switch without changing JSON.
+
+**Images / Glide in the library?**  
+No. Implement `ImageLoader` in the app (sample uses Glide).
+
+**Can I use only Kotlin, no JSON?**  
+Yes — build `FNode` trees and `host.bind(root)`.
+
+**Is the API stable?**  
+v1.x public API is documented and frozen for breaking changes — [docs/api-1.0.md](docs/api-1.0.md).
+
+**How do I measure cost?**  
+Sample **Benchmark** screen, or `BenchmarkRunner` in your app. Prefer empty `RenderConfig` for deterministic runs.
+
+**Maven Central?**  
+JitPack / `mavenLocal` today; Central steps in [docs/publishing.md](docs/publishing.md).
+
+---
+
+## Quick start (copy-paste)
 
 ```kotlin
-host.renderConfig = RenderConfig(
-    imageLoader = MyGlideLoader(context), // you provide
-    actionHandler = { node, action -> /* navigate */ },
-)
-host.bindJson(backendJson)
+implementation("com.github.manhtu227.FView:json-to-view:v1.0.0")
+// + maven { url = uri("https://jitpack.io") }
 ```
 
-Core stays free of Glide; inject loaders only in the app.
+```kotlin
+import com.manhtu.jsontoview.JsonToViewHost
 
-## Status & roadmap
+val host = JsonToViewHost(context).apply {
+    mode = JsonToViewHost.Mode.FLAT
+    bindJson(jsonFromBackend)
+}
+```
 
-- [x] Dual backends + shared model  
-- [x] JSON subset parser  
-- [x] `JsonToViewHost` public entry  
-- [x] Sample feed + benchmark UI  
-- [x] Unit tests + CI  
-- [x] JitPack-oriented packaging (`v1.0.0`)  
-- [ ] Maven Central  
-- [ ] App-provided image loader hook  
-- [ ] Stable JSON schema docs for 1.0  
-- [ ] Dokka API site  
+More: [docs/schema.md](docs/schema.md) · [docs/feed-templates.md](docs/feed-templates.md) · [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+## Contributing & license
 
 ```bash
-./gradlew :json-to-view:testDebugUnitTest
+./gradlew :json-to-view:testDebugUnitTest :app:assembleDebug
 ```
 
-Please keep the core / benchmark path free of network image loading.
-
-## Security
-
-See [SECURITY.md](SECURITY.md).
-
-## License
-
-Apache License 2.0 — [LICENSE](LICENSE).
-
-## Maintainers
-
-- [manhtu227](https://github.com/manhtu227)
+- [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md)  
+- Apache License 2.0 — [LICENSE](LICENSE)  
+- Maintainer: [manhtu227](https://github.com/manhtu227)
