@@ -19,5 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "JsonToView"
+rootProject.name = "json-to-view"
+include(":json-to-view")
 include(":app")

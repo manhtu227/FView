@@ -1,7 +1,6 @@
 package com.demo.jsontoview.benchmark
 
 import android.os.Bundle
-import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.FrameLayout
@@ -11,12 +10,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.jsontoview.R
-import com.demo.jsontoview.model.SyntheticTreeFactory
-import com.demo.jsontoview.model.TreeSpec
-import com.demo.jsontoview.model.nodeCount
-import com.demo.jsontoview.parse.JsonTreeParser
+import com.manhtu.jsontoview.benchmark.BenchmarkReport
+import com.manhtu.jsontoview.benchmark.BenchmarkRunner
+import com.manhtu.jsontoview.benchmark.RenderMode
+import com.manhtu.jsontoview.benchmark.deltaPct
+import com.manhtu.jsontoview.model.SyntheticTreeFactory
+import com.manhtu.jsontoview.model.TreeSpec
+import com.manhtu.jsontoview.model.nodeCount
+import com.manhtu.jsontoview.parse.JsonTreeParser
 import java.util.concurrent.Executors
 
+/** Sample UI — uses the json-to-view SDK benchmark APIs. */
 class BenchmarkActivity : AppCompatActivity() {
 
     private lateinit var modeSpinner: Spinner
@@ -120,7 +124,6 @@ class BenchmarkActivity : AppCompatActivity() {
 
     private fun runOne(spec: TreeSpec, mode: RenderMode, next: () -> Unit) {
         statusText.text = "Running ${mode.name} · ${spec.name}"
-        // Ensure container has size before measure
         benchContainer.post {
             runner.run(spec, mode, includeScroll = true) { report ->
                 reports.add(report)

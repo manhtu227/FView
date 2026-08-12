@@ -6,10 +6,10 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.demo.jsontoview.R
-import com.demo.jsontoview.flat.FlatHostView
-import com.demo.jsontoview.parse.JsonTreeParser
+import com.manhtu.jsontoview.JsonToViewHost
 import java.util.concurrent.Executors
 
+/** Sample: render assets/view.json with the SDK default (Flat for performance). */
 class FeedActivity : AppCompatActivity() {
     private val io = Executors.newSingleThreadExecutor()
 
@@ -17,7 +17,9 @@ class FeedActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_feed)
         val container = findViewById<FrameLayout>(R.id.feedContainer)
-        val host = FlatHostView(this)
+        val host = JsonToViewHost(this).apply {
+            mode = JsonToViewHost.Mode.FLAT
+        }
         container.addView(
             host,
             FrameLayout.LayoutParams(
@@ -29,8 +31,7 @@ class FeedActivity : AppCompatActivity() {
         io.execute {
             try {
                 val json = assets.open("view.json").bufferedReader().use { it.readText() }
-                val root = JsonTreeParser.parse(json)
-                runOnUiThread { host.bind(root) }
+                runOnUiThread { host.bindJson(json) }
             } catch (e: Exception) {
                 runOnUiThread {
                     Toast.makeText(this, "Failed to load feed: ${e.message}", Toast.LENGTH_LONG).show()

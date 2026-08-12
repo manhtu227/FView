@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.jsontoview.R
+import com.manhtu.jsontoview.benchmark.BenchmarkReport
 
 class ResultsAdapter : RecyclerView.Adapter<ResultsAdapter.Holder>() {
     private val items = mutableListOf<BenchmarkReport>()
