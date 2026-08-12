@@ -9,21 +9,29 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:text="FView"
+        android:text="@string/launcher_title"
         android:textSize="28sp"
         android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="24dp"
+        android:gravity="center"
+        android:text="@string/launcher_subtitle"
+        android:textSize="14sp" />
 
     <Button
         android:id="@+id/feedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Feed Demo" />
+        android:text="@string/feed_demo" />
 
     <Button
         android:id="@+id/benchmarkButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="Benchmark" />
+        android:text="@string/benchmark" />
 </LinearLayout>

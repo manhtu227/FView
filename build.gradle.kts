@@ -4,3 +4,10 @@ plugins {
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.jetbrains.kotlin.android) apply false
 }
+
+// JitPack (and local checks) often invoke a root "install" task.
+tasks.register("install") {
+    dependsOn(":json-to-view:publishToMavenLocal")
+    group = "publishing"
+    description = "Publish :json-to-view to mavenLocal (JitPack-compatible entrypoint)"
+}

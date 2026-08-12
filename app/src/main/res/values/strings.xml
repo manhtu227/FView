@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">JsonToView</string>
+    <string name="app_name">json-to-view sample</string>
+    <string name="launcher_title">json-to-view</string>
+    <string name="launcher_subtitle">Sample app · Flat (performance) &amp; Nested (debug)</string>
+    <string name="feed_demo">Feed demo (Flat)</string>
+    <string name="benchmark">Benchmark Flat vs Nested</string>
 </resources>

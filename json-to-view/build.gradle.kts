@@ -48,15 +48,19 @@ dependencies {
     testImplementation(libs.junit)
 }
 
-group = "io.github.manhtu227"
-version = "0.1.0"
+// JitPack injects group as com.github.<user>.<repo> when building from a tag.
+val publishGroup = (findProperty("GROUP") as String?)
+    ?: System.getenv("GROUP")
+    ?: "io.github.manhtu227"
+group = publishGroup
+version = "0.1.1"
 
 afterEvaluate {
     publishing {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "io.github.manhtu227"
+                groupId = publishGroup
                 artifactId = "json-to-view"
                 version = project.version.toString()
 

@@ -1,0 +1,17 @@
+# Build the publishable Android library module for JitPack consumers.
+# Dependency: com.github.manhtu227.FView:json-to-view:<tag>
+jdk:
+  - openjdk17
+
+before_install:
+  - mkdir -p "$HOME/.android"
+  - mkdir -p local
+  - |
+    if [ -n "$ANDROID_HOME" ]; then
+      echo "sdk.dir=$ANDROID_HOME" > local.properties
+    elif [ -d "$HOME/android-sdk" ]; then
+      echo "sdk.dir=$HOME/android-sdk" > local.properties
+    fi
+
+install:
+  - ./gradlew :json-to-view:publishToMavenLocal -x test --stacktrace
