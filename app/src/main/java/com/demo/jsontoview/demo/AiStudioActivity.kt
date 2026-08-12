@@ -19,7 +19,7 @@ import com.manhtu.jsontoview.parse.JsonTreeParser
 import java.util.concurrent.Executors
 
 /**
- * Sample-only: natural language → xAI → stable layout JSON → JsonToViewHost preview.
+ * Sample-only: natural language → AI API → stable layout JSON → JsonToViewHost preview.
  * API key from debug BuildConfig (local.properties); never part of the published SDK.
  */
 class AiStudioActivity : AppCompatActivity() {
@@ -76,7 +76,7 @@ class AiStudioActivity : AppCompatActivity() {
 
         systemPrompt = assets.open("ai/system_prompt.txt").bufferedReader().use { it.readText() }
 
-        if (BuildConfig.XAI_API_KEY.isBlank()) {
+        if (BuildConfig.AI_API_KEY.isBlank()) {
             statusText.text = getString(R.string.ai_studio_missing_key)
         } else {
             statusText.text = getString(R.string.ai_studio_ready)
@@ -108,7 +108,7 @@ class AiStudioActivity : AppCompatActivity() {
     }
 
     private fun generate() {
-        val key = BuildConfig.XAI_API_KEY
+        val key = BuildConfig.AI_API_KEY
         if (key.isBlank()) {
             statusText.text = getString(R.string.ai_studio_missing_key)
             return
@@ -126,8 +126,8 @@ class AiStudioActivity : AppCompatActivity() {
             try {
                 val client = LayoutAiClient(
                     apiKey = key,
-                    baseUrl = BuildConfig.XAI_BASE_URL,
-                    model = BuildConfig.XAI_MODEL,
+                    baseUrl = BuildConfig.AI_BASE_URL,
+                    model = BuildConfig.AI_MODEL,
                     systemPrompt = systemPrompt,
                 )
                 var json = client.generateLayoutJson(prompt)

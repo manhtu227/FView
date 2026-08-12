@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate json-to-view layout JSON from a natural-language prompt via xAI.
+"""Generate json-to-view layout JSON from a natural-language prompt (OpenAI-compatible API).
 
 Usage:
-  export XAI_API_KEY=...
+  export AI_API_KEY=...
   python3 scripts/ai_layout.py "card with image and title" -o /tmp/ui.json
 
 Requires: pip install -r scripts/requirements-ai.txt  (or: pip install openai)
@@ -59,19 +59,24 @@ def extract_json_object(raw: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="AI layout JSON generator (xAI)")
+    parser = argparse.ArgumentParser(description="AI layout JSON generator")
     parser.add_argument("prompt", help="Natural language screen description")
     parser.add_argument("-o", "--output", help="Write JSON to file (default: stdout)")
     parser.add_argument(
         "--model",
-        default=os.environ.get("XAI_MODEL", "grok-4.5"),
-        help="Model id (default grok-4.5)",
+        default=os.environ.get("AI_MODEL", "grok-4.5"),
+        help="Model id (default from AI_MODEL or grok-4.5)",
+    )
+    parser.add_argument(
+        "--base-url",
+        default=os.environ.get("AI_BASE_URL", "https://api.x.ai/v1"),
+        help="OpenAI-compatible base URL",
     )
     args = parser.parse_args()
 
-    api_key = os.environ.get("XAI_API_KEY", "").strip()
+    api_key = os.environ.get("AI_API_KEY", "").strip()
     if not api_key:
-        print("XAI_API_KEY is not set. Export it or see docs/ai-studio.md", file=sys.stderr)
+        print("AI_API_KEY is not set. Export it or see docs/ai-studio.md", file=sys.stderr)
         return 1
 
     try:
@@ -80,7 +85,7 @@ def main() -> int:
         print("Install openai: pip install openai", file=sys.stderr)
         return 1
 
-    client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+    client = OpenAI(api_key=api_key, base_url=args.base_url)
     completion = client.chat.completions.create(
         model=args.model,
         messages=[
@@ -93,7 +98,6 @@ def main() -> int:
     )
     content = completion.choices[0].message.content or ""
     json_text = extract_json_object(content)
-    # Validate JSON syntax
     json.loads(json_text)
 
     if args.output:

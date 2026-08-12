@@ -27,9 +27,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Release and default: empty key (never ship secrets).
-        buildConfigField("String", "XAI_API_KEY", "\"\"")
-        buildConfigField("String", "XAI_BASE_URL", "\"https://api.x.ai/v1\"")
-        buildConfigField("String", "XAI_MODEL", "\"grok-4.5\"")
+        buildConfigField("String", "AI_API_KEY", "\"\"")
+        buildConfigField("String", "AI_BASE_URL", "\"https://api.x.ai/v1\"")
+        buildConfigField("String", "AI_MODEL", "\"grok-4.5\"")
     }
 
     buildFeatures {
@@ -39,8 +39,8 @@ android {
     buildTypes {
         debug {
             // Demo only: read from gitignored local.properties
-            val key = localProperties.getProperty("XAI_API_KEY", "")
-            buildConfigField("String", "XAI_API_KEY", "\"${escapeBuildConfig(key)}\"")
+            val key = localProperties.getProperty("AI_API_KEY", "")
+            buildConfigField("String", "AI_API_KEY", "\"${escapeBuildConfig(key)}\"")
         }
         release {
             isMinifyEnabled = false
@@ -48,7 +48,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            buildConfigField("String", "XAI_API_KEY", "\"\"")
+            buildConfigField("String", "AI_API_KEY", "\"\"")
         }
     }
     compileOptions {

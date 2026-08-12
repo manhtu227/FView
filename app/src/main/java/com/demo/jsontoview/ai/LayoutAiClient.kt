@@ -9,13 +9,14 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
 /**
- * Calls xAI (SpaceXAI) OpenAI-compatible chat completions to generate layout JSON.
+ * Calls an OpenAI-compatible chat completions API to generate layout JSON.
  * Demo sample only — not part of the published json-to-view AAR.
+ * Configure base URL / model / key via [BuildConfig] (`AI_*`).
  */
 class LayoutAiClient(
     private val apiKey: String,
-    private val baseUrl: String = "https://api.x.ai/v1",
-    private val model: String = "grok-4.5",
+    private val baseUrl: String,
+    private val model: String,
     private val systemPrompt: String,
     private val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(60, TimeUnit.SECONDS)
@@ -29,7 +30,7 @@ class LayoutAiClient(
      * @return raw assistant message content
      */
     fun generateRaw(userPrompt: String): String {
-        require(apiKey.isNotBlank()) { "XAI_API_KEY is empty" }
+        require(apiKey.isNotBlank()) { "AI_API_KEY is empty" }
 
         val body = JsonObject().apply {
             addProperty("model", model)
@@ -62,7 +63,7 @@ class LayoutAiClient(
         http.newCall(request).execute().use { response ->
             val raw = response.body?.string().orEmpty()
             if (!response.isSuccessful) {
-                throw IllegalStateException("xAI HTTP ${response.code}: ${raw.take(500)}")
+                throw IllegalStateException("AI HTTP ${response.code}: ${raw.take(500)}")
             }
             val root = gson.fromJson(raw, JsonObject::class.java)
             val content = root

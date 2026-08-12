@@ -44,13 +44,13 @@ You can render the **same tree** with two engines:
 
 ### AI Layout Studio (sample app only)
 
-Describe a screen in natural language → **xAI** generates schema JSON → preview with Flat/Nested.
+Describe a screen in natural language → **AI API** generates schema JSON → preview with Flat/Nested.
 
 ```text
-Prompt → xAI → JSON → JsonTreeParser → JsonToViewHost
+Prompt → AI (OpenAI-compatible) → JSON → JsonTreeParser → JsonToViewHost
 ```
 
-- Setup: [docs/ai-studio.md](docs/ai-studio.md) (`XAI_API_KEY` in gitignored `local.properties` for debug)
+- Setup: [docs/ai-studio.md](docs/ai-studio.md) (`AI_API_KEY` in gitignored `local.properties` for debug)
 - CLI: `python3 scripts/ai_layout.py "product card…" -o out.json`
 - **Not** bundled in the published AAR — no AI dependency in `:json-to-view`
 
