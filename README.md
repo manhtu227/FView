@@ -1,15 +1,48 @@
 # json-to-view
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Android%20API-24%2B-green.svg)](#)
-[![CI](https://github.com/manhtu227/FView/actions/workflows/ci.yml/badge.svg)](https://github.com/manhtu227/FView/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/tag/manhtu227/FView?label=tag)](https://github.com/manhtu227/FView/tags)
-[![JitPack](https://jitpack.io/v/manhtu227/FView.svg)](https://jitpack.io/#manhtu227/FView)
+<p align="center">
+  <strong>Backend describes the screen as JSON — the app builds the UI the user sees.</strong><br/>
+  One shared tree model. Two native renderers. Optional benchmarks and AI layout studio (sample).
+</p>
 
-**json-to-view** is a small Android SDK for **server-driven UI (SDUI)**:
+<p align="center">
+  <em>same&nbsp;FNode · Flat&nbsp;(canvas)&nbsp;or&nbsp;Nested&nbsp;(Views) · offline&nbsp;core · app-injected&nbsp;images/actions · no&nbsp;AI&nbsp;in&nbsp;the&nbsp;AAR</em>
+</p>
 
-- **Backend / CMS** describes the screen as JSON (layout tree + content)
-- **Your app** renders that JSON into real UI on the device
+<p align="center">
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/LICENSE-Apache%202.0-7c83ff?style=for-the-badge&labelColor=3d3d4a" /></a>
+  <img alt="Kotlin" src="https://img.shields.io/badge/KOTLIN-Android-7F52FF?style=for-the-badge&labelColor=3d3d4a&logo=kotlin&logoColor=white" />
+  <img alt="API" src="https://img.shields.io/badge/MIN_SDK-24%2B-2ea44f?style=for-the-badge&labelColor=3d3d4a" />
+  <img alt="SDUI" src="https://img.shields.io/badge/SDUI-JSON%20→%20UI-0ea5e9?style=for-the-badge&labelColor=3d3d4a" />
+  <img alt="Renderers" src="https://img.shields.io/badge/RENDER-Flat%20%7C%20Nested-111827?style=for-the-badge&labelColor=3d3d4a" />
+  <img alt="Core" src="https://img.shields.io/badge/CORE-Offline-14b8a6?style=for-the-badge&labelColor=3d3d4a" />
+  <img alt="AI" src="https://img.shields.io/badge/AI-Sample%20only-f472b6?style=for-the-badge&labelColor=3d3d4a" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/manhtu227/FView/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/manhtu227/FView/ci.yml?branch=main&style=for-the-badge&label=CI&labelColor=3d3d4a" /></a>
+  <a href="https://github.com/manhtu227/FView/releases"><img alt="Version" src="https://img.shields.io/badge/v1.0.0-stable%20API-22c55e?style=for-the-badge&labelColor=3d3d4a" /></a>
+  <img alt="Status" src="https://img.shields.io/badge/STATUS-OPEN%20SOURCE-f59e0b?style=for-the-badge&labelColor=3d3d4a" />
+  <a href="https://jitpack.io/#manhtu227/FView"><img alt="JitPack" src="https://img.shields.io/badge/JITPACK-json--to--view-lightgrey?style=for-the-badge&labelColor=3d3d4a" /></a>
+</p>
+
+<p align="center">
+  <a href="#why-it-exists">Why</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#json-mapping">JSON mapping</a> ·
+  <a href="#ai-layout-studio-sample-app-only">AI Studio</a> ·
+  <a href="#modules-in-this-repo">Modules</a> ·
+  <a href="#status--roadmap">Roadmap</a>
+</p>
+
+> **Note**  
+> **v1.0.0** freezes the public SDK API ([docs/api-1.0.md](docs/api-1.0.md)). Stable JSON mapping: [docs/MAPPING_STABLE.md](docs/MAPPING_STABLE.md).  
+> Sample app includes feed, benchmark, and optional **AI Layout Studio** (not in the AAR). Issues and feedback welcome.
+
+---
+
+### Idea in one diagram
 
 ```text
 Backend / CMS  ──JSON──►  json-to-view  ──►  Android UI
@@ -17,16 +50,12 @@ Backend / CMS  ──JSON──►  json-to-view  ──►  Android UI
 ```
 
 The backend does **not** create Android `View`s. It only ships a **description**.  
-This library is what **builds and draws** the UI on the client.
-
-You can render the **same tree** with two engines:
+This library **builds and draws** the UI on the client — with the **same tree** on two engines:
 
 | Mode | Class | Best for |
 |------|--------|----------|
 | **Flat** | `JsonToViewHost.Mode.FLAT` · `FlatHostView` | Performance — canvas host, few Android Views |
 | **Nested** | `JsonToViewHost.Mode.NESTED` · `NestedHost` | Debug — real View hierarchy (Layout Inspector) |
-
-> **Status:** `1.0.0` (early). Library + sample app. Install via monorepo module, `mavenLocal`, or [JitPack](https://jitpack.io/#manhtu227/FView).
 
 ---
 
