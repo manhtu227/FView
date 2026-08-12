@@ -1,5 +1,6 @@
 package com.manhtu.jsontoview.flat
 
+import android.graphics.drawable.Drawable
 import com.manhtu.jsontoview.model.FNode
 
 /** Mutable layout result for a virtual [FNode] after measure/layout. */
@@ -10,4 +11,5 @@ class FlatLayoutNode(
     var w: Int = 0,
     var h: Int = 0,
     val children: MutableList<FlatLayoutNode> = mutableListOf(),
+    var imageDrawable: Drawable? = null,
 )

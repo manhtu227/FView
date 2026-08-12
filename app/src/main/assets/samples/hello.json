@@ -1,0 +1,38 @@
+{
+  "type": "column",
+  "props": {
+    "width": { "value": -1, "unit": "dp" },
+    "height": { "value": -1, "unit": "dp" },
+    "gap": 12,
+    "padding": { "left": 16, "top": 16, "right": 16, "bottom": 16 },
+    "backgroundColor": "#FFFFFFFF"
+  },
+  "children": [
+    {
+      "type": "text",
+      "props": {
+        "width": { "value": -2, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "text": "Hello json-to-view",
+        "textSizeSp": 22,
+        "textColor": "#FF212121"
+      },
+      "children": []
+    },
+    {
+      "type": "text",
+      "props": {
+        "width": { "value": -2, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "text": "Tap me (open_url)",
+        "textSizeSp": 16,
+        "textColor": "#FF1565C0",
+        "action": {
+          "type": "open_url",
+          "payload": "https://github.com/manhtu227/FView"
+        }
+      },
+      "children": []
+    }
+  ]
+}

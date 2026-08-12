@@ -1,0 +1,20 @@
+{
+  "type": "column",
+  "props": {
+    "width": { "value": -1, "unit": "dp" },
+    "height": { "value": -1, "unit": "dp" },
+    "gap": 12
+  },
+  "children": [
+    {
+      "type": "text",
+      "props": {
+        "width": { "value": -2, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "text": "Hello",
+        "action": { "type": "open_url", "payload": "https://example.com" }
+      },
+      "children": []
+    }
+  ]
+}

@@ -4,15 +4,19 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.manhtu.jsontoview.RenderConfig
+import com.manhtu.jsontoview.image.ImageTarget
 import com.manhtu.jsontoview.model.Dimension
 import com.manhtu.jsontoview.model.FNode
 import com.manhtu.jsontoview.model.NodeKind
@@ -32,6 +36,10 @@ class FlatHostView @JvmOverloads constructor(
     private var root: FNode? = null
     private var layoutRoot: FlatLayoutNode? = null
     private var isListMode = false
+    private var bindGeneration = 0
+    private val pendingTargets = mutableListOf<ImageTarget>()
+
+    var renderConfig: RenderConfig = RenderConfig()
 
     var lastMeasureNs: Long = 0L
         private set
@@ -47,9 +55,12 @@ class FlatHostView @JvmOverloads constructor(
 
     init {
         setWillNotDraw(false)
+        isClickable = true
     }
 
     fun bind(root: FNode) {
+        cancelPendingLoads()
+        bindGeneration++
         this.root = root
         layoutRoot = null
         isListMode = root.kind == NodeKind.LIST
@@ -62,7 +73,7 @@ class FlatHostView @JvmOverloads constructor(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
                 layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-                adapter = FlatListAdapter(root.children)
+                adapter = FlatListAdapter(root.children, renderConfig)
                 overScrollMode = OVER_SCROLL_NEVER
             }
             addView(rv)
@@ -74,12 +85,20 @@ class FlatHostView @JvmOverloads constructor(
     }
 
     fun clearTree() {
+        cancelPendingLoads()
+        bindGeneration++
         root = null
         layoutRoot = null
         isListMode = false
         removeAllViews()
         requestLayout()
         invalidate()
+    }
+
+    private fun cancelPendingLoads() {
+        val loader = renderConfig.imageLoader
+        pendingTargets.forEach { loader?.cancel(it) }
+        pendingTargets.clear()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -129,8 +148,54 @@ class FlatHostView @JvmOverloads constructor(
             rootLn.x = 0
             rootLn.y = 0
             layoutChildren(rootLn)
+            requestImages(rootLn)
         }
         lastLayoutNs = System.nanoTime() - t0
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (isListMode) return super.onTouchEvent(event)
+        if (event.action == MotionEvent.ACTION_UP) {
+            val handler = renderConfig.actionHandler
+            val hit = layoutRoot?.let { findHit(it, event.x.toInt(), event.y.toInt()) }
+            val action = hit?.node?.props?.action
+            if (handler != null && hit != null && action != null) {
+                handler.onAction(hit.node, action)
+                return true
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+    private fun findHit(ln: FlatLayoutNode, x: Int, y: Int): FlatLayoutNode? {
+        // Children first (top-most)
+        for (i in ln.children.indices.reversed()) {
+            findHit(ln.children[i], x, y)?.let { return it }
+        }
+        val inside = x >= ln.x && x < ln.x + ln.w && y >= ln.y && y < ln.y + ln.h
+        return if (inside && ln.node.props.action != null) ln else null
+    }
+
+    private fun requestImages(ln: FlatLayoutNode) {
+        val url = ln.node.props.imageUrl
+        val loader = renderConfig.imageLoader
+        if (!url.isNullOrBlank() && loader != null && ln.imageDrawable == null) {
+            val gen = bindGeneration
+            val target = object : ImageTarget {
+                override fun onSuccess(drawable: Drawable) {
+                    if (gen != bindGeneration) return
+                    ln.imageDrawable = drawable
+                    invalidate()
+                }
+
+                override fun onError() {
+                    // keep placeholder path
+                }
+            }
+            pendingTargets.add(target)
+            loader.load(url, target)
+        }
+        ln.children.forEach { requestImages(it) }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -310,15 +375,24 @@ class FlatHostView @JvmOverloads constructor(
 
     private fun drawNode(canvas: Canvas, ln: FlatLayoutNode) {
         val p = ln.node.props
-        val bg = p.backgroundColor
-        if (bg != null) {
-            fillPaint.color = bg
-            val radius = p.cornerRadius * density
-            tmpRect.set(ln.x.toFloat(), ln.y.toFloat(), (ln.x + ln.w).toFloat(), (ln.y + ln.h).toFloat())
-            if (radius > 0f) {
-                canvas.drawRoundRect(tmpRect, radius, radius, fillPaint)
-            } else {
-                canvas.drawRect(tmpRect, fillPaint)
+        tmpRect.set(ln.x.toFloat(), ln.y.toFloat(), (ln.x + ln.w).toFloat(), (ln.y + ln.h).toFloat())
+        val image = ln.imageDrawable
+        if (image != null) {
+            image.setBounds(ln.x, ln.y, ln.x + ln.w, ln.y + ln.h)
+            image.draw(canvas)
+        } else if (!p.imageUrl.isNullOrBlank()) {
+            fillPaint.color = p.backgroundColor ?: renderConfig.imagePlaceholderColor
+            canvas.drawRect(tmpRect, fillPaint)
+        } else {
+            val bg = p.backgroundColor
+            if (bg != null) {
+                fillPaint.color = bg
+                val radius = p.cornerRadius * density
+                if (radius > 0f) {
+                    canvas.drawRoundRect(tmpRect, radius, radius, fillPaint)
+                } else {
+                    canvas.drawRect(tmpRect, fillPaint)
+                }
             }
         }
 
@@ -356,6 +430,7 @@ class FlatHostView @JvmOverloads constructor(
 
     private class FlatListAdapter(
         private val items: List<FNode>,
+        private val config: RenderConfig,
     ) : RecyclerView.Adapter<FlatListAdapter.Holder>() {
 
         class Holder(val host: FlatHostView) : RecyclerView.ViewHolder(host)
@@ -371,6 +446,7 @@ class FlatHostView @JvmOverloads constructor(
         }
 
         override fun onBindViewHolder(holder: Holder, position: Int) {
+            holder.host.renderConfig = config
             holder.host.bind(items[position])
         }
 

@@ -13,12 +13,10 @@ import com.manhtu.jsontoview.parse.JsonTreeParser
 /**
  * Primary SDK entry: one host that can render an [FNode] tree with either backend.
  *
- * - [Mode.FLAT] — single canvas host (performance-oriented)
- * - [Mode.NESTED] — real Android view hierarchy (debug / parity-friendly)
- *
  * ```
  * val host = JsonToViewHost(context).apply {
  *     mode = JsonToViewHost.Mode.FLAT
+ *     renderConfig = RenderConfig(imageLoader = myLoader, actionHandler = { n, a -> … })
  *     bindJson(json)
  * }
  * ```
@@ -29,10 +27,7 @@ class JsonToViewHost @JvmOverloads constructor(
 ) : FrameLayout(context, attrs) {
 
     enum class Mode {
-        /** Canvas / virtual tree — fewer Android Views. */
         FLAT,
-
-        /** One Android View (group) per node — easier hierarchy inspection. */
         NESTED,
     }
 
@@ -44,6 +39,13 @@ class JsonToViewHost @JvmOverloads constructor(
             pendingRoot?.let { bind(it) }
         }
 
+    var renderConfig: RenderConfig = RenderConfig()
+        set(value) {
+            field = value
+            applyConfigToHost()
+            pendingRoot?.let { bind(it) }
+        }
+
     private var activeHost: View? = null
     private var pendingRoot: FNode? = null
 
@@ -51,9 +53,9 @@ class JsonToViewHost @JvmOverloads constructor(
         rebuildHost()
     }
 
-    /** Bind a model tree using the current [mode]. */
     fun bind(root: FNode) {
         pendingRoot = root
+        applyConfigToHost()
         when (val host = activeHost) {
             is FlatHostView -> host.bind(root)
             is NestedHost -> host.bind(root)
@@ -62,7 +64,6 @@ class JsonToViewHost @JvmOverloads constructor(
         invalidate()
     }
 
-    /** Parse legacy/server JSON and bind. */
     fun bindJson(json: String) {
         bind(JsonTreeParser.parse(json))
     }
@@ -75,7 +76,6 @@ class JsonToViewHost @JvmOverloads constructor(
         }
     }
 
-    /** Underlying host for advanced timing / hierarchy inspection. */
     fun underlyingHost(): View? = activeHost
 
     val lastMeasureNs: Long
@@ -99,6 +99,13 @@ class JsonToViewHost @JvmOverloads constructor(
             else -> 0L
         }
 
+    private fun applyConfigToHost() {
+        when (val host = activeHost) {
+            is FlatHostView -> host.renderConfig = renderConfig
+            is NestedHost -> host.renderConfig = renderConfig
+        }
+    }
+
     private fun rebuildHost() {
         removeAllViews()
         val host: View = when (mode) {
@@ -106,6 +113,7 @@ class JsonToViewHost @JvmOverloads constructor(
             Mode.NESTED -> NestedHost(context)
         }
         activeHost = host
+        applyConfigToHost()
         addView(
             host,
             LayoutParams(
@@ -116,7 +124,6 @@ class JsonToViewHost @JvmOverloads constructor(
     }
 }
 
-/** Convenience aliases for SDK discoverability. */
 object JsonToView {
     fun parse(json: String): FNode = JsonTreeParser.parse(json)
 

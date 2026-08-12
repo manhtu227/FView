@@ -1,0 +1,51 @@
+{
+  "type": "column",
+  "props": {
+    "id": "card-root",
+    "width": { "value": -1, "unit": "dp" },
+    "height": { "value": -2, "unit": "dp" },
+    "gap": 8,
+    "padding": { "left": 12, "top": 12, "right": 12, "bottom": 12 },
+    "backgroundColor": "#FFFFFFFF",
+    "cornerRadius": 12,
+    "action": {
+      "type": "navigate",
+      "payload": "card/detail/1"
+    }
+  },
+  "children": [
+    {
+      "type": "box",
+      "props": {
+        "width": { "value": -1, "unit": "dp" },
+        "height": { "value": 160, "unit": "dp" },
+        "imageUrl": "https://picsum.photos/800/400",
+        "contentDescription": "Hero image",
+        "cornerRadius": 8
+      },
+      "children": []
+    },
+    {
+      "type": "text",
+      "props": {
+        "width": { "value": -1, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "text": "Server-driven card",
+        "textSizeSp": 18,
+        "textColor": "#FF212121"
+      },
+      "children": []
+    },
+    {
+      "type": "text",
+      "props": {
+        "width": { "value": -1, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "text": "Backend sets imageUrl + action; app loads image and handles taps.",
+        "textSizeSp": 14,
+        "textColor": "#FF616161"
+      },
+      "children": []
+    }
+  ]
+}

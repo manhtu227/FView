@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "json-to-view"
 include(":json-to-view")
 include(":app")
+include(":consumer-demo")

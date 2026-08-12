@@ -4,6 +4,7 @@ import com.manhtu.jsontoview.model.Dimension
 import com.manhtu.jsontoview.model.DimUnit
 import com.manhtu.jsontoview.model.EdgeInsets
 import com.manhtu.jsontoview.model.FNode
+import com.manhtu.jsontoview.model.NodeAction
 import com.manhtu.jsontoview.model.NodeKind
 import com.manhtu.jsontoview.model.NodeProps
 import com.manhtu.jsontoview.model.TreeSource
@@ -13,8 +14,11 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 
 /**
- * Maps legacy view.json trees into pure [FNode] model.
- * Tolerant of missing fields; unknown props ignored.
+ * Maps JSON trees into pure [FNode] model.
+ *
+ * Supports:
+ * - **Stable 0.2+** schema: `"type": "column"|"row"|…` + `props.imageUrl` / `props.action`
+ * - **Legacy** `viewType` / `drawable` trees (sample feed)
  */
 object JsonTreeParser {
 
@@ -32,12 +36,13 @@ object JsonTreeParser {
 
     private fun parseNode(obj: JsonObject): FNode {
         val propsObj = obj.getAsJsonObjectOrNull("props")
-        val viewType = obj.getIntOr("viewType", 2)
         val childrenJson = obj.getAsJsonArrayOrNull("children")
         val children = childrenJson?.mapNotNull { el ->
             if (el.isJsonObject) parseNode(el.asJsonObject) else null
         }.orEmpty()
 
+        val stableType = obj.get("type")?.asStringOrNull()?.lowercase()
+        val viewType = obj.getIntOr("viewType", 2)
         val orientation = propsObj?.getIntOr("orientation", 1) ?: 1
         val layoutType = propsObj?.getIntOr("layoutType", 0) ?: 0
         val drawable = propsObj?.getAsJsonObjectOrNull("drawable")
@@ -45,6 +50,7 @@ object JsonTreeParser {
         val hasMeaningfulChildren = children.isNotEmpty()
 
         val kind = when {
+            stableType != null -> kindFromStableType(stableType)
             viewType == 1 -> NodeKind.LIST
             viewType == 3 -> NodeKind.BOX
             layoutType == 1 -> NodeKind.STACK
@@ -63,20 +69,34 @@ object JsonTreeParser {
         val backgroundColor = parseBackgroundColor(propsObj)
         val cornerRadius = propsObj?.get("cornerRadius")?.asFloatOrNull() ?: 0f
 
-        var text: String? = null
-        var textSizeSp = 14f
-        var textColor = 0xFF000000.toInt()
+        var text: String? = propsObj?.get("text")?.asStringOrNull()
+        var textSizeSp = propsObj?.get("textSizeSp")?.asFloatOrNull()
+            ?: propsObj?.get("textSize")?.asFloatOrNull()
+            ?: 14f
+        var textColor = parseColor(propsObj?.get("textColor")?.asStringOrNull()) ?: 0xFF000000.toInt()
 
         if (kind == NodeKind.TEXT && drawable != null) {
-            text = drawable.get("data")?.asStringOrNull()
+            text = text ?: drawable.get("data")?.asStringOrNull()
             val dProps = drawable.getAsJsonObjectOrNull("props")
-            textSizeSp = dProps?.get("textSize")?.asFloatOrNull() ?: 14f
-            textColor = parseColor(dProps?.get("textColor")?.asStringOrNull()) ?: 0xFF000000.toInt()
+            textSizeSp = dProps?.get("textSize")?.asFloatOrNull() ?: textSizeSp
+            textColor = parseColor(dProps?.get("textColor")?.asStringOrNull()) ?: textColor
         }
+
+        var imageUrl = propsObj?.get("imageUrl")?.asStringOrNull()
+        if (imageUrl.isNullOrBlank() && drawable != null && drawableType != 1) {
+            // Legacy image-like drawable: treat data as URL when it looks like one
+            val data = drawable.get("data")?.asStringOrNull()
+            if (!data.isNullOrBlank() && (data.startsWith("http") || data.startsWith("content:"))) {
+                imageUrl = data
+            }
+        }
+
+        val action = parseAction(propsObj?.getAsJsonObjectOrNull("action"))
 
         val resolvedBackground = when {
             backgroundColor != null -> backgroundColor
-            kind == NodeKind.BOX && drawable != null && drawableType != 1 -> 0xFF888888.toInt()
+            kind == NodeKind.BOX && drawable != null && drawableType != 1 && imageUrl.isNullOrBlank() ->
+                0xFF888888.toInt()
             else -> null
         }
 
@@ -92,25 +112,60 @@ object JsonTreeParser {
             text = text,
             textSizeSp = textSizeSp,
             textColor = textColor,
+            imageUrl = imageUrl,
+            contentDescription = propsObj?.get("contentDescription")?.asStringOrNull(),
+            action = action,
         )
 
         return FNode(kind = kind, props = props, children = children)
     }
 
+    private fun kindFromStableType(type: String): NodeKind = when (type) {
+        "row" -> NodeKind.ROW
+        "column" -> NodeKind.COLUMN
+        "stack" -> NodeKind.STACK
+        "box" -> NodeKind.BOX
+        "text" -> NodeKind.TEXT
+        "list" -> NodeKind.LIST
+        else -> NodeKind.BOX
+    }
+
+    private fun parseAction(obj: JsonObject?): NodeAction? {
+        if (obj == null) return null
+        val type = obj.get("type")?.asStringOrNull() ?: return null
+        val payload = obj.get("payload")?.asStringOrNull()
+        return NodeAction(type = type, payload = payload)
+    }
+
     private fun parseDimension(obj: JsonObject?, default: Dimension): Dimension {
         if (obj == null) return default
         val value = obj.getIntOr("value", default.value)
-        val unitCode = obj.getIntOr("unit", 1)
-        val unit = when (unitCode) {
-            2 -> DimUnit.PX
-            3 -> DimUnit.PERCENT
-            else -> DimUnit.DP
-        }
+        val unit = parseUnit(obj.get("unit"), DimUnit.DP)
         return when (value) {
             -1 -> Dimension.MATCH
             -2 -> Dimension.WRAP
             else -> Dimension(value, unit)
         }
+    }
+
+    private fun parseUnit(el: JsonElement?, default: DimUnit): DimUnit {
+        if (el == null || !el.isJsonPrimitive) return default
+        val p = el.asJsonPrimitive
+        if (p.isNumber) {
+            return when (p.asInt) {
+                2 -> DimUnit.PX
+                3 -> DimUnit.PERCENT
+                else -> DimUnit.DP
+            }
+        }
+        if (p.isString) {
+            return when (p.asString.lowercase()) {
+                "px" -> DimUnit.PX
+                "percent", "%" -> DimUnit.PERCENT
+                else -> DimUnit.DP
+            }
+        }
+        return default
     }
 
     private fun parseInsets(obj: JsonObject?): EdgeInsets {
@@ -124,12 +179,11 @@ object JsonTreeParser {
     }
 
     private fun parseBackgroundColor(props: JsonObject?): Int? {
+        props?.get("backgroundColor")?.asStringOrNull()?.let { return parseColor(it) }
         val bg = props?.getAsJsonObjectOrNull("background") ?: return null
-        val colorStr = bg.get("color")?.asStringOrNull()
-        return parseColor(colorStr)
+        return parseColor(bg.get("color")?.asStringOrNull())
     }
 
-    /** Parses #RRGGBB or #AARRGGBB; returns null on failure. */
     fun parseColor(raw: String?): Int? {
         if (raw.isNullOrBlank()) return null
         val s = raw.trim().removePrefix("#")

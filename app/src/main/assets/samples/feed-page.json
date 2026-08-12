@@ -1,0 +1,122 @@
+{
+  "type": "column",
+  "props": {
+    "width": { "value": -1, "unit": "dp" },
+    "height": { "value": -2, "unit": "dp" },
+    "gap": 12,
+    "padding": { "left": 12, "top": 12, "right": 12, "bottom": 12 },
+    "backgroundColor": "#FFF5F5F5"
+  },
+  "children": [
+    {
+      "type": "text",
+      "props": {
+        "width": { "value": -1, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "text": "Feed (sample)",
+        "textSizeSp": 20,
+        "textColor": "#FF212121"
+      },
+      "children": []
+    },
+    {
+      "type": "column",
+      "props": {
+        "width": { "value": -1, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "gap": 8,
+        "padding": { "left": 12, "top": 12, "right": 12, "bottom": 12 },
+        "backgroundColor": "#FFFFFFFF",
+        "action": { "type": "navigate", "payload": "post/1" }
+      },
+      "children": [
+        {
+          "type": "box",
+          "props": {
+            "width": { "value": -1, "unit": "dp" },
+            "height": { "value": 120, "unit": "dp" },
+            "imageUrl": "https://picsum.photos/seed/a/800/300"
+          },
+          "children": []
+        },
+        {
+          "type": "text",
+          "props": {
+            "width": { "value": -1, "unit": "dp" },
+            "height": { "value": -2, "unit": "dp" },
+            "text": "Post one",
+            "textSizeSp": 16,
+            "textColor": "#FF212121"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "type": "column",
+      "props": {
+        "width": { "value": -1, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "gap": 8,
+        "padding": { "left": 12, "top": 12, "right": 12, "bottom": 12 },
+        "backgroundColor": "#FFFFFFFF",
+        "action": { "type": "navigate", "payload": "post/2" }
+      },
+      "children": [
+        {
+          "type": "box",
+          "props": {
+            "width": { "value": -1, "unit": "dp" },
+            "height": { "value": 120, "unit": "dp" },
+            "imageUrl": "https://picsum.photos/seed/b/800/300"
+          },
+          "children": []
+        },
+        {
+          "type": "text",
+          "props": {
+            "width": { "value": -1, "unit": "dp" },
+            "height": { "value": -2, "unit": "dp" },
+            "text": "Post two",
+            "textSizeSp": 16,
+            "textColor": "#FF212121"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "type": "column",
+      "props": {
+        "width": { "value": -1, "unit": "dp" },
+        "height": { "value": -2, "unit": "dp" },
+        "gap": 8,
+        "padding": { "left": 12, "top": 12, "right": 12, "bottom": 12 },
+        "backgroundColor": "#FFFFFFFF",
+        "action": { "type": "open_url", "payload": "https://example.com" }
+      },
+      "children": [
+        {
+          "type": "box",
+          "props": {
+            "width": { "value": -1, "unit": "dp" },
+            "height": { "value": 120, "unit": "dp" },
+            "imageUrl": "https://picsum.photos/seed/c/800/300"
+          },
+          "children": []
+        },
+        {
+          "type": "text",
+          "props": {
+            "width": { "value": -1, "unit": "dp" },
+            "height": { "value": -2, "unit": "dp" },
+            "text": "Sponsored link",
+            "textSizeSp": 16,
+            "textColor": "#FF1565C0"
+          },
+          "children": []
+        }
+      ]
+    }
+  ]
+}

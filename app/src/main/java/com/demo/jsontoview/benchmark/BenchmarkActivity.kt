@@ -37,6 +37,9 @@ class BenchmarkActivity : AppCompatActivity() {
     private val io = Executors.newSingleThreadExecutor()
     private val reports = mutableListOf<BenchmarkReport>()
     private var feedSpec: TreeSpec? = null
+    private var sampleHello: TreeSpec? = null
+    private var sampleCard: TreeSpec? = null
+    private var sampleFeedPage: TreeSpec? = null
     private var running = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +63,16 @@ class BenchmarkActivity : AppCompatActivity() {
         sourceSpinner.adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_dropdown_item,
-            listOf("Feed JSON", "Shallow", "Deep", "Wide", "FeedLike"),
+            listOf(
+                "Feed JSON",
+                "Shallow",
+                "Deep",
+                "Wide",
+                "FeedLike",
+                "Sample hello",
+                "Sample card",
+                "Sample feed-page",
+            ),
         )
 
         resultsAdapter = ResultsAdapter()
@@ -82,18 +94,28 @@ class BenchmarkActivity : AppCompatActivity() {
     }
 
     private fun preloadFeed() {
-        statusText.text = "Loading feed…"
+        statusText.text = "Loading trees…"
         io.execute {
             try {
-                val json = assets.open("view.json").bufferedReader().use { it.readText() }
-                val spec = JsonTreeParser.parseTreeSpec(json, name = "feed-json")
+                fun load(path: String, name: String) =
+                    JsonTreeParser.parseTreeSpec(
+                        assets.open(path).bufferedReader().use { it.readText() },
+                        name = name,
+                    )
+                val feed = load("view.json", "feed-json")
+                val hello = load("samples/hello.json", "sample-hello")
+                val card = load("samples/card.json", "sample-card")
+                val feedPage = load("samples/feed-page.json", "sample-feed-page")
                 runOnUiThread {
-                    feedSpec = spec
-                    statusText.text = "Ready (feed nodes=${spec.root.nodeCount()})"
+                    feedSpec = feed
+                    sampleHello = hello
+                    sampleCard = card
+                    sampleFeedPage = feedPage
+                    statusText.text = "Ready (feed nodes=${feed.root.nodeCount()})"
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    statusText.text = "Feed load failed: ${e.message}"
+                    statusText.text = "Load failed: ${e.message}"
                 }
             }
         }
@@ -157,6 +179,9 @@ class BenchmarkActivity : AppCompatActivity() {
             2 -> SyntheticTreeFactory.deep()
             3 -> SyntheticTreeFactory.wide()
             4 -> SyntheticTreeFactory.feedLike()
+            5 -> sampleHello
+            6 -> sampleCard
+            7 -> sampleFeedPage
             else -> null
         }
     }

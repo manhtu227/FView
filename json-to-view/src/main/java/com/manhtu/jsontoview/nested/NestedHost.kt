@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import com.manhtu.jsontoview.RenderConfig
 import com.manhtu.jsontoview.model.FNode
 
 /**
@@ -14,6 +15,8 @@ class NestedHost @JvmOverloads constructor(
     attrs: AttributeSet? = null,
 ) : FrameLayout(context, attrs) {
 
+    var renderConfig: RenderConfig = RenderConfig()
+
     var lastMeasureNs: Long = 0L
         private set
     var lastLayoutNs: Long = 0L
@@ -23,7 +26,7 @@ class NestedHost @JvmOverloads constructor(
 
     fun bind(root: FNode) {
         clearTree()
-        val tree = NestedTreeBuilder.build(context, root)
+        val tree = NestedTreeBuilder.build(context, root, renderConfig)
         val lp = tree.layoutParams as? LayoutParams
             ?: LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -32,7 +35,7 @@ class NestedHost @JvmOverloads constructor(
         if (lp.width == ViewGroup.LayoutParams.WRAP_CONTENT) {
             lp.width = ViewGroup.LayoutParams.MATCH_PARENT
         }
-        if (lp.height == ViewGroup.LayoutParams.WRAP_CONTENT && root.kind.name == "LIST") {
+        if (lp.height == ViewGroup.LayoutParams.WRAP_CONTENT && root.kind == com.manhtu.jsontoview.model.NodeKind.LIST) {
             lp.height = ViewGroup.LayoutParams.MATCH_PARENT
         }
         addView(tree, lp)

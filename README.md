@@ -26,7 +26,7 @@ You can render the **same tree** with two engines:
 | **Flat** | `JsonToViewHost.Mode.FLAT` · `FlatHostView` | Performance — canvas host, few Android Views |
 | **Nested** | `JsonToViewHost.Mode.NESTED` · `NestedHost` | Debug — real View hierarchy (Layout Inspector) |
 
-> **Status:** `0.1.1` (early). Library + sample app. Install via monorepo module, `mavenLocal`, or [JitPack](https://jitpack.io/#manhtu227/FView).
+> **Status:** `1.0.0` (early). Library + sample app. Install via monorepo module, `mavenLocal`, or [JitPack](https://jitpack.io/#manhtu227/FView).
 
 ---
 
@@ -89,7 +89,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.manhtu227.FView:json-to-view:v0.1.1")
+    implementation("com.github.manhtu227.FView:json-to-view:v1.0.0")
 }
 ```
 
@@ -107,7 +107,7 @@ implementation(project(":json-to-view"))
 
 ```kotlin
 repositories { mavenLocal() }
-implementation("io.github.manhtu227:json-to-view:0.1.1")
+implementation("io.github.manhtu227:json-to-view:1.0.0")
 ```
 
 ---
@@ -249,6 +249,27 @@ More detail: [docs/demo.md](docs/demo.md) · sample numbers: [docs/benchmark-not
 
 ---
 
+## Schema & SDUI
+
+- **Schema:** [docs/schema.md](docs/schema.md) — `type`, `imageUrl`, `action`
+- **Samples:** [docs/schema/](docs/schema/) (`hello`, `card`, `feed-page`)
+- **Feed templates:** [docs/feed-templates.md](docs/feed-templates.md)
+- **Stable mapping 1.0:** [docs/MAPPING_STABLE.md](docs/MAPPING_STABLE.md)
+- **API freeze:** [docs/api-1.0.md](docs/api-1.0.md)
+- **Consumer demo:** module `:consumer-demo` (second app using the library)
+
+### Image + action (app code)
+
+```kotlin
+host.renderConfig = RenderConfig(
+    imageLoader = MyGlideLoader(context), // you provide
+    actionHandler = { node, action -> /* navigate */ },
+)
+host.bindJson(backendJson)
+```
+
+Core stays free of Glide; inject loaders only in the app.
+
 ## Status & roadmap
 
 - [x] Dual backends + shared model  
@@ -256,7 +277,7 @@ More detail: [docs/demo.md](docs/demo.md) · sample numbers: [docs/benchmark-not
 - [x] `JsonToViewHost` public entry  
 - [x] Sample feed + benchmark UI  
 - [x] Unit tests + CI  
-- [x] JitPack-oriented packaging (`v0.1.1`)  
+- [x] JitPack-oriented packaging (`v1.0.0`)  
 - [ ] Maven Central  
 - [ ] App-provided image loader hook  
 - [ ] Stable JSON schema docs for 1.0  

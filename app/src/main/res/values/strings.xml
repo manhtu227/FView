@@ -1,7 +1,10 @@
 <resources>
     <string name="app_name">json-to-view sample</string>
     <string name="launcher_title">json-to-view</string>
-    <string name="launcher_subtitle">Sample app · Flat (performance) &amp; Nested (debug)</string>
-    <string name="feed_demo">Feed demo (Flat)</string>
+    <string name="launcher_subtitle">Backend describes UI (JSON). App builds Flat or Nested.</string>
+    <string name="feed_demo">Legacy feed (view.json)</string>
+    <string name="sample_hello">Sample: hello.json</string>
+    <string name="sample_card">Sample: card.json</string>
+    <string name="sample_feed_page">Sample: feed-page.json</string>
     <string name="benchmark">Benchmark Flat vs Nested</string>
 </resources>

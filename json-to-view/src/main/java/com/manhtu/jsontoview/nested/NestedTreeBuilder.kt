@@ -1,14 +1,18 @@
 package com.manhtu.jsontoview.nested
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.manhtu.jsontoview.RenderConfig
+import com.manhtu.jsontoview.image.ImageTarget
 import com.manhtu.jsontoview.model.Dimension
 import com.manhtu.jsontoview.model.FNode
 import com.manhtu.jsontoview.model.NodeKind
@@ -20,28 +24,41 @@ import com.manhtu.jsontoview.util.Dimens
  */
 object NestedTreeBuilder {
 
-    fun build(context: Context, node: FNode): View {
+    fun build(
+        context: Context,
+        node: FNode,
+        config: RenderConfig = RenderConfig(),
+    ): View {
         val view = when (node.kind) {
-            NodeKind.ROW -> buildLinear(context, node, LinearLayout.HORIZONTAL)
-            NodeKind.COLUMN -> buildLinear(context, node, LinearLayout.VERTICAL)
-            NodeKind.STACK -> buildStack(context, node)
+            NodeKind.ROW -> buildLinear(context, node, LinearLayout.HORIZONTAL, config)
+            NodeKind.COLUMN -> buildLinear(context, node, LinearLayout.VERTICAL, config)
+            NodeKind.STACK -> buildStack(context, node, config)
             NodeKind.TEXT -> buildText(context, node)
-            NodeKind.BOX -> buildBox(context, node)
-            NodeKind.LIST -> buildList(context, node)
+            NodeKind.BOX -> buildBox(context, node, config)
+            NodeKind.LIST -> buildList(context, node, config)
         }
         applyPadding(view, node)
-        applyBackground(view, node)
+        if (node.props.imageUrl.isNullOrBlank()) {
+            applyBackground(view, node)
+        }
+        applyAction(view, node, config)
+        node.props.contentDescription?.let { view.contentDescription = it }
         view.layoutParams = createLayoutParams(context, node, view)
         return view
     }
 
-    private fun buildLinear(context: Context, node: FNode, orientation: Int): LinearLayout {
+    private fun buildLinear(
+        context: Context,
+        node: FNode,
+        orientation: Int,
+        config: RenderConfig,
+    ): LinearLayout {
         val layout = LinearLayout(context).apply {
             this.orientation = orientation
         }
         val gap = node.props.gap
         node.children.forEachIndexed { index, child ->
-            val childView = build(context, child)
+            val childView = build(context, child, config)
             val lp = childView.layoutParams as? ViewGroup.MarginLayoutParams
                 ?: ViewGroup.MarginLayoutParams(childView.layoutParams)
             if (index > 0 && gap > 0) {
@@ -57,10 +74,10 @@ object NestedTreeBuilder {
         return layout
     }
 
-    private fun buildStack(context: Context, node: FNode): FrameLayout {
+    private fun buildStack(context: Context, node: FNode, config: RenderConfig): FrameLayout {
         val layout = FrameLayout(context)
         for (child in node.children) {
-            layout.addView(build(context, child))
+            layout.addView(build(context, child, config))
         }
         return layout
     }
@@ -74,16 +91,46 @@ object NestedTreeBuilder {
         }
     }
 
-    private fun buildBox(context: Context, node: FNode): View {
+    private fun buildBox(context: Context, node: FNode, config: RenderConfig): View {
+        val url = node.props.imageUrl
+        if (!url.isNullOrBlank()) {
+            val imageView = ImageView(context).apply {
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setBackgroundColor(node.props.backgroundColor ?: config.imagePlaceholderColor)
+            }
+            val loader = config.imageLoader
+            if (loader != null) {
+                val target = object : ImageTarget {
+                    override fun onSuccess(drawable: Drawable) {
+                        imageView.setImageDrawable(drawable)
+                        imageView.background = null
+                    }
+
+                    override fun onError() {
+                        // keep placeholder background
+                    }
+                }
+                imageView.tag = target
+                loader.load(url, target)
+            }
+            return imageView
+        }
         return View(context)
     }
 
-    private fun buildList(context: Context, node: FNode): RecyclerView {
+    private fun buildList(context: Context, node: FNode, config: RenderConfig): RecyclerView {
         return RecyclerView(context).apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-            adapter = NestedListAdapter(node.children)
+            adapter = NestedListAdapter(node.children, config)
             overScrollMode = View.OVER_SCROLL_NEVER
         }
+    }
+
+    private fun applyAction(view: View, node: FNode, config: RenderConfig) {
+        val action = node.props.action ?: return
+        val handler = config.actionHandler ?: return
+        view.isClickable = true
+        view.setOnClickListener { handler.onAction(node, action) }
     }
 
     private fun applyPadding(view: View, node: FNode) {
@@ -117,6 +164,7 @@ object NestedTreeBuilder {
             is LinearLayout -> LinearLayout.LayoutParams(w, h)
             is FrameLayout -> FrameLayout.LayoutParams(w, h)
             is RecyclerView -> RecyclerView.LayoutParams(w, h)
+            is ImageView -> ViewGroup.MarginLayoutParams(w, h)
             else -> ViewGroup.MarginLayoutParams(w, h)
         }
         val m = node.props.margin
@@ -134,7 +182,6 @@ object NestedTreeBuilder {
             -1 -> ViewGroup.LayoutParams.MATCH_PARENT
             -2 -> ViewGroup.LayoutParams.WRAP_CONTENT
             else -> Dimens.resolve(dim, parentSize = 0, density = density).let {
-                // percent with parent 0 is 0; callers remeasure with real parent
                 if (dim.value > 0 && it == 0 && dim.unit.name == "PERCENT") {
                     ViewGroup.LayoutParams.MATCH_PARENT
                 } else {
@@ -146,12 +193,12 @@ object NestedTreeBuilder {
 
     private class NestedListAdapter(
         private val items: List<FNode>,
+        private val config: RenderConfig,
     ) : RecyclerView.Adapter<NestedListAdapter.Holder>() {
 
         class Holder(val root: View) : RecyclerView.ViewHolder(root)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
-            // Placeholder; real tree bound in onBind
             val placeholder = FrameLayout(parent.context).apply {
                 layoutParams = RecyclerView.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -164,7 +211,7 @@ object NestedTreeBuilder {
         override fun onBindViewHolder(holder: Holder, position: Int) {
             val container = holder.root as FrameLayout
             container.removeAllViews()
-            val child = build(container.context, items[position])
+            val child = build(container.context, items[position], config)
             val lp = child.layoutParams as? ViewGroup.MarginLayoutParams
                 ?: ViewGroup.MarginLayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,

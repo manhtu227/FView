@@ -8,24 +8,29 @@ import androidx.appcompat.app.AppCompatActivity
 import com.demo.jsontoview.R
 import com.manhtu.jsontoview.JsonToViewHost
 import com.manhtu.jsontoview.RenderConfig
-import java.util.concurrent.Executors
 
-/** Sample: render assets/view.json (legacy feed) with Flat + optional Glide. */
-class FeedActivity : AppCompatActivity() {
-    private val io = Executors.newSingleThreadExecutor()
+/**
+ * Loads a stable-schema JSON sample from assets and renders with Flat + Glide.
+ *
+ * Intent extra [EXTRA_ASSET]: path under assets, e.g. `samples/hello.json`
+ */
+class SampleJsonActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_feed)
         val container = findViewById<FrameLayout>(R.id.feedContainer)
+        val asset = intent.getStringExtra(EXTRA_ASSET) ?: "samples/hello.json"
+        title = asset.substringAfterLast('/')
+
         val host = JsonToViewHost(this).apply {
             mode = JsonToViewHost.Mode.FLAT
             renderConfig = RenderConfig(
-                imageLoader = GlideImageLoader(this@FeedActivity),
-                actionHandler = { _, action ->
+                imageLoader = GlideImageLoader(this@SampleJsonActivity),
+                actionHandler = { node, action ->
                     Toast.makeText(
-                        this@FeedActivity,
-                        "${action.type}: ${action.payload}",
+                        this@SampleJsonActivity,
+                        "action=${action.type} payload=${action.payload} id=${node.props.id}",
                         Toast.LENGTH_SHORT,
                     ).show()
                 },
@@ -39,20 +44,15 @@ class FeedActivity : AppCompatActivity() {
             ),
         )
 
-        io.execute {
-            try {
-                val json = assets.open("view.json").bufferedReader().use { it.readText() }
-                runOnUiThread { host.bindJson(json) }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(this, "Failed to load feed: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
+        try {
+            val json = assets.open(asset).bufferedReader().use { it.readText() }
+            host.bindJson(json)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Load failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        io.shutdownNow()
+    companion object {
+        const val EXTRA_ASSET = "asset"
     }
 }

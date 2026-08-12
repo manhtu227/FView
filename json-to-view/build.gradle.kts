@@ -53,7 +53,7 @@ val publishGroup = (findProperty("GROUP") as String?)
     ?: System.getenv("GROUP")
     ?: "io.github.manhtu227"
 group = publishGroup
-version = "0.1.1"
+version = "1.0.0"
 
 afterEvaluate {
     publishing {
